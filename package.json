@@ -1,0 +1,29 @@
+{
+  "name": "la-cashback",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MVP Affiliate + Cashback tiếng Việt, chỉ chạy demo cục bộ",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "dev": "node --env-file-if-exists=.env scripts/dev.js",
+    "build": "vite build",
+    "test": "node --test --test-concurrency=1",
+    "test:ui": "playwright test",
+    "format": "prettier --write src server scripts tests e2e *.js *.json index.html README.md docs",
+    "migrate": "node --env-file-if-exists=.env scripts/migrate.js",
+    "seed": "node --env-file-if-exists=.env scripts/seed.js"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "prettier": "^3.9.10",
+    "vite": "^7.1.0"
+  }
+}

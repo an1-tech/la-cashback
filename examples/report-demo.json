@@ -1,0 +1,13 @@
+[
+  {
+    "eventId": "DEMO-REPORT-001",
+    "externalId": "DEMO-ORDER-001",
+    "itemId": "1",
+    "clickId": "THAY-BANG-MA-LUOT-BAM-TRONG-QUAN-TRI",
+    "title": "Sản phẩm minh họa từ báo cáo",
+    "orderValue": 500000,
+    "commission": 30000,
+    "status": "pending",
+    "reason": ""
+  }
+]
