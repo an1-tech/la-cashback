@@ -37,14 +37,21 @@ Mở <http://127.0.0.1:5173>. Vite proxy `/api` sang backend cổng 3080. Dừng
 ## Thử toàn bộ hành trình
 
 1. Đăng nhập người mua; dán `https://shopee.vn/demo-i.123.456`, bấm **Kiểm tra hoàn tiền**. Tên, ảnh và tiền dự kiến đều chưa xác định do chưa có nguồn sản phẩm được xác minh.
-2. Bấm **Mua hàng nhận hoàn tiền**. Backend lưu lượt bấm và phiên bản chính sách, mở cửa hàng mô phỏng nội bộ. Không tạo link affiliate thật, không gọi Shopee và không cộng tiền vì lượt bấm.
+2. Sau khi kiểm tra thành công, backend lưu link theo dõi cùng phiên bản chính sách. Bạn có thể sao chép, xem lại lịch sử hoặc bấm **Mua hàng nhận hoàn tiền** để mở cửa hàng mô phỏng nội bộ. Không tạo link affiliate thật, không gọi Shopee và không cộng tiền vì lượt bấm.
 3. Bấm **Mô phỏng mua & ghi nhận đơn chờ duyệt**. Kịch bản dùng đơn giả 450.000 đ, hoa hồng giả 25.000 đ; đây không phải tỷ lệ Shopee. Chính sách mẫu chia 70% hoa hồng, nên chờ duyệt là 17.500 đ. Gửi lại cùng lượt bấm không ghi nhận trùng.
 4. Đăng nhập quản trị ở trình duyệt hoặc profile khác; mở **Quản trị → Đơn & đối soát**. Chọn đơn và ghi nhận hoa hồng hợp lệ hoặc từ chối với lý do. Có thể nhập báo cáo JSON và xem kết quả từng dòng.
-5. Người mua vào **Số dư**. Sau khi chính sách cho phép khả dụng, thêm ngân hàng giả ở **Cá nhân**, xác nhận bằng mật khẩu, rồi yêu cầu rút. Chính sách mẫu rút tối thiểu 50.000 đ, chờ khả dụng 0 ngày để dễ thử; tài khoản mẫu ban đầu có 76.000 đ khả dụng.
+5. Người mua vào **Số dư**. Sau khi chính sách cho phép khả dụng, thêm ngân hàng giả ở **Cá nhân → Phương thức nhận tiền**, xác nhận bằng mật khẩu, rồi yêu cầu rút. Chính sách mẫu rút tối thiểu 50.000 đ, chờ khả dụng 0 ngày để dễ thử; tài khoản mẫu ban đầu có 76.000 đ khả dụng.
 6. Quản trị vào **Rút tiền**, duyệt yêu cầu. Bước này chưa ghi nhận thanh toán. Mở lại yêu cầu, ghi nhận thanh toán mô phỏng với mã duy nhất như `DEMO-TRANSFER-0001`, hoặc chọn thất bại để giải phóng tiền giữ.
 7. Người mua tải lại ví để xem kết quả, thông báo và sổ giao dịch. Mỗi phiên chỉ cập nhật sau thao tác/tải lại; chưa có push thời gian thực.
 
 ## Đã hoạt động
+
+- Bố cục mở rộng cho màn hình 1920/2560 px; trang cá nhân chia nhóm tiền/đơn hàng, thành viên/phần thưởng và thông tin/hỗ trợ; điện thoại giữ năm đích điều hướng chính.
+- Bảng tin có tìm kiếm, lọc chuyên mục, bài ghim, thích/bỏ thích và sao chép link bài. Quản trị viên có thể đăng và ẩn bài ngay tại bảng tin.
+- Điểm danh theo ngày Việt Nam, chống cộng trùng; mã quà tặng `LACHAMBAO` cộng 100 điểm một lần. Điểm và hạng là dữ liệu trải nghiệm, không quy đổi tiền, không đi vào sổ ví.
+- Giới thiệu bạn bè: mã riêng, link mời, ghi nhận một người giới thiệu và thống kê số tài khoản đã nhập mã. Chưa trả thưởng giới thiệu bằng tiền.
+- Bảng xếp hạng tuần/tháng/năm/tất cả từ đơn hiện đã duyệt, dựa trên thời điểm cập nhật đối soát. Người dùng chủ động bật tham gia và đặt biệt danh. Không công khai email, mã người dùng hoặc ngân hàng.
+- Trung tâm hỏi đáp có tìm kiếm; gửi yêu cầu thiếu đơn/góp ý và theo dõi phản hồi trong cài đặt. Xem quy tắc và kịch bản thử tại [docs/COMMUNITY.md](docs/COMMUNITY.md).
 
 - React SPA tiếng Việt: Trang chủ, Đơn hàng, Ưu đãi, Số dư, Cá nhân; thanh điều hướng dưới trên điện thoại; sáng/tối được lưu trên trình duyệt.
 - Đăng ký, đăng nhập, đăng xuất, hồ sơ, đặt lại mật khẩu demo, đổi ngân hàng giả có xác nhận mật khẩu, khóa tài khoản và thu hồi phiên.

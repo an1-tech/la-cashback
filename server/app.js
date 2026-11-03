@@ -33,6 +33,7 @@ import {
   adjustBalance,
 } from "./finance.js";
 import { demoProvider } from "./providers/demo.js";
+import { communityRoutes } from "./community.js";
 const safeUser = (u) =>
   u && {
     id: u.id,
@@ -202,6 +203,20 @@ export function createApp(
         );
       }
       const method = req.method;
+      if (
+        communityRoutes({
+          db,
+          path,
+          method,
+          body,
+          url,
+          user,
+          needUser,
+          needAdmin,
+          send,
+        })
+      )
+        return;
       const beginSession = (uid) => {
         const t = token(),
           csrf = token();

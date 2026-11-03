@@ -160,7 +160,10 @@ test("Luồng React: đăng ký → link → đơn demo → quản trị duyệt
   const adminContext = await browser.newContext();
   const admin = await adminContext.newPage();
   await admin.goto("http://127.0.0.1:3081/");
-  await admin.getByRole("banner").getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await admin
+    .getByRole("banner")
+    .getByRole("button", { name: "Đăng nhập", exact: true })
+    .click();
   await admin
     .getByRole("dialog")
     .getByRole("button", { name: "Quản trị", exact: true })
@@ -186,6 +189,9 @@ test("Luồng React: đăng ký → link → đơn demo → quản trị duyệt
   await page
     .getByRole("navigation", { name: "Điều hướng chính" })
     .getByRole("button", { name: "Cá nhân", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Phương thức nhận tiền", exact: true })
     .click();
   await page.getByLabel("Số tài khoản demo").fill("DEMO-00009999");
   await page.getByLabel("Mật khẩu hiện tại").fill("Demo@123456");

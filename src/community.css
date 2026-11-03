@@ -1,0 +1,712 @@
+/* Lá's existing forest/lime contract, expanded for wide desktop workspaces. */
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+.app-shell .sidebar-foot,
+.app-shell .demo-pill,
+.app-shell .demo-notice,
+.app-shell .demo-notice button,
+.app-shell .main-footer,
+.app-shell .bottom-nav button,
+.app-shell .little-leaf .text-button,
+.app-shell .eyebrow {
+  font-size: 12px;
+}
+.app-shell .bottom-nav button span {
+  font-size: 11px;
+}
+.home-lower-grid {
+  align-items: start;
+  align-self: start;
+}
+.main-content {
+  max-width: 1760px;
+}
+.sidebar {
+  overflow-y: auto;
+}
+.sidebar .secondary-nav {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.sidebar .little-leaf {
+  display: none;
+}
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 20px;
+}
+.sidebar .nav-item {
+  min-height: 44px;
+}
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+.quick-actions button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  min-height: 52px;
+  text-align: left;
+}
+.quick-actions button > svg:last-child {
+  margin-left: auto;
+}
+.quick-actions button:hover,
+.account-links button:hover,
+.guide-links button:hover {
+  background: var(--surface-2);
+}
+.quick-actions svg {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.home-community {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 20px;
+}
+.home-community .panel {
+  padding: 24px;
+}
+.daily-panel small {
+  display: block;
+  color: var(--muted);
+  margin-top: 14px;
+}
+.home-community p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.guide-links {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.guide-links button {
+  border: 0;
+  background: var(--surface-2);
+  text-align: left;
+  padding: 16px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 8px;
+}
+.guide-links svg {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.member-layout,
+.feed-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(280px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.member-layout > *,
+.feed-layout > *,
+.feed-grid > *,
+.account-grid > *,
+.home-community > * {
+  min-width: 0;
+}
+.member-layout p,
+.community-aside p {
+  line-height: 1.7;
+  max-width: 72ch;
+}
+.community-aside > svg {
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+.community-aside h2 {
+  font-size: 24px;
+  line-height: 1.35;
+}
+.community-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  align-items: end;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.community-toolbar .field {
+  margin: 0;
+}
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 0 14px;
+  min-height: 46px;
+}
+.search-field input {
+  border: 0;
+  background: transparent;
+  padding: 12px 0;
+}
+.feed-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+.feed-post {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.feed-post h2 {
+  margin: 6px 0 0;
+  font-size: 22px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.feed-post p {
+  margin: 0;
+  line-height: 1.8;
+}
+.post-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.post-meta,
+.post-meta > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.post-meta {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.post-meta small {
+  color: var(--muted);
+}
+.post-meta svg {
+  color: var(--accent);
+}
+.post-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: auto;
+}
+.post-actions button {
+  min-height: 44px;
+}
+.post-actions [aria-pressed="true"] {
+  color: var(--accent);
+}
+.feed-post.highlighted {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.community-aside details {
+  margin-top: 24px;
+}
+summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 12px 0;
+  line-height: 1.5;
+}
+.check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  line-height: 1.6;
+}
+.check-label input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+.account-hero,
+.account-identity {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.account-hero {
+  justify-content: space-between;
+  margin: 10px 0 28px;
+}
+.account-identity {
+  min-width: 0;
+}
+.account-identity > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.account-identity h2 {
+  margin: 0;
+  font-size: 26px;
+}
+.account-identity p {
+  margin: 8px 0;
+  color: var(--muted);
+}
+.large-avatar {
+  flex-shrink: 0;
+}
+.member-caption {
+  color: var(--accent);
+  font-size: 14px;
+}
+.profile-money {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 30px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  margin-bottom: 28px;
+}
+.profile-money span {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.profile-money strong {
+  display: block;
+  font-size: 30px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+}
+.profile-money > div:first-child strong {
+  color: var(--accent);
+}
+.account-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+.account-grid h2 {
+  font-size: 18px;
+}
+.account-links {
+  display: flex;
+  flex-direction: column;
+}
+.account-links button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  text-align: left;
+  min-height: 56px;
+}
+.account-links button:last-child {
+  border-bottom: 0;
+}
+.account-links button > svg {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.account-links button > svg:last-child {
+  margin-left: auto;
+}
+.member-main > svg {
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+.member-main h2 {
+  font-size: 28px;
+  line-height: 1.35;
+}
+.member-numbers {
+  display: flex;
+  gap: 56px;
+  padding: 24px 0;
+}
+.member-numbers strong {
+  font-size: 40px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+}
+.member-numbers span {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 8px;
+}
+progress {
+  width: 100%;
+  accent-color: var(--accent);
+  height: 10px;
+}
+.tier-list {
+  padding: 18px 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.ranking-list,
+.reward-list,
+.link-history ul {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+}
+.ranking-list li,
+.reward-list li,
+.link-history li {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ranking-list li > span:nth-child(2),
+.reward-list li > span,
+.link-history li > div {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.rank-position {
+  width: 28px;
+  color: var(--muted);
+  font-size: 20px;
+}
+.ranking-list b,
+.reward-list b {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ranking-list small,
+.reward-list small,
+.link-history small {
+  display: block;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.reward-list strong {
+  font-weight: 500;
+}
+.period-tabs {
+  flex-wrap: wrap;
+}
+.faq-list details {
+  border-bottom: 1px solid var(--border);
+  padding: 6px 0;
+}
+.faq-list p {
+  color: var(--muted);
+}
+.link-steps {
+  padding-left: 22px;
+  line-height: 1.8;
+}
+.link-steps li {
+  padding: 8px 0;
+}
+.created-link {
+  background: var(--surface-2);
+  border-left: 3px solid var(--accent);
+  padding: 18px;
+  margin-top: 18px;
+  border-radius: 8px;
+}
+.created-link strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.created-link a {
+  display: block;
+  overflow-wrap: anywhere;
+  text-decoration: underline;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.created-link small {
+  display: block;
+  color: var(--muted);
+  margin-top: 12px;
+}
+.link-history {
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+}
+.source-url {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.member-layout .link-input {
+  flex-wrap: wrap;
+}
+.member-layout .link-input input {
+  flex: 1;
+  min-width: 120px;
+}
+.member-layout .link-input .primary {
+  margin-left: auto;
+}
+.member-layout .inspection {
+  flex-wrap: wrap;
+}
+.member-layout .inspection > div {
+  min-width: 0;
+  flex: 1;
+}
+.member-layout .inspection > button {
+  flex-basis: 100%;
+}
+@media (min-width: 1700px) {
+  .home-dashboard {
+    grid-template-columns: minmax(0, 2fr) minmax(340px, 1fr);
+    gap: 24px;
+  }
+  .quick-actions {
+    grid-column: 1/-1;
+  }
+  .shopping-intro {
+    grid-column: 1;
+  }
+  .wallet-overview {
+    grid-column: 2;
+    align-self: end;
+  }
+  .home-lower-grid {
+    grid-column: 1;
+    grid-template-columns: minmax(0, 1.6fr) minmax(250px, 1fr);
+  }
+  .home-community {
+    grid-column: 2;
+    grid-row: 3;
+    display: flex;
+    flex-direction: column;
+  }
+  .wallet-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+  .wallet-summary > div:first-child {
+    grid-column: 1/-1;
+    padding-bottom: 22px;
+  }
+  .wallet-summary > div:nth-child(2) {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .wallet-summary strong {
+    font-size: 26px;
+  }
+  .wallet-summary .wallet-available strong {
+    font-size: 34px;
+  }
+  .journey-strip {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+    font-size: 12px;
+  }
+  .home-community .guide-links {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .shopping-intro h1 {
+    font-size: 42px;
+  }
+  .home-lower-grid .discovery-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1250px) {
+  .feed-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .account-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .account-grid > :last-child {
+    grid-column: 1/-1;
+  }
+  .quick-actions {
+    gap: 8px;
+  }
+  .quick-actions button {
+    padding: 12px;
+    gap: 6px;
+    font-size: 13px;
+  }
+  .quick-actions button > svg:last-child {
+    display: none;
+  }
+  .member-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .profile-money {
+    gap: 20px;
+  }
+  .profile-money strong {
+    font-size: 24px;
+  }
+}
+@media (max-width: 900px) {
+  .home-community {
+    grid-template-columns: 1fr;
+  }
+  .profile-money {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .profile-money > button {
+    grid-column: 1/-1;
+    justify-self: start;
+  }
+  .guide-links {
+    grid-template-columns: 1fr;
+  }
+  .quick-actions button {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    font-size: 12px;
+  }
+}
+@media (max-width: 760px) {
+  .main-content {
+    padding-bottom: 110px;
+  }
+  .quick-actions {
+    gap: 6px;
+  }
+  .quick-actions button {
+    padding: 10px 2px;
+    border: 0;
+    font-size: 11px;
+    gap: 8px;
+  }
+  .quick-actions svg {
+    width: 18px;
+    height: 18px;
+  }
+  .home-dashboard {
+    gap: 22px;
+  }
+  .feed-grid,
+  .account-grid {
+    grid-template-columns: 1fr;
+  }
+  .account-grid > :last-child {
+    grid-column: auto;
+  }
+  .community-toolbar {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .community-toolbar .field {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .community-toolbar .field > span {
+    white-space: nowrap;
+  }
+  .feed-post h2 {
+    font-size: 21px;
+  }
+  .account-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .account-identity {
+    gap: 14px;
+  }
+  .account-identity h2 {
+    font-size: 22px;
+  }
+  .account-identity p {
+    font-size: 13px;
+  }
+  .profile-money {
+    padding: 20px;
+    gap: 20px;
+    grid-template-columns: 1fr 1fr;
+  }
+  .profile-money > div:first-child {
+    grid-column: 1/-1;
+  }
+  .profile-money span {
+    font-size: 13px;
+  }
+  .profile-money strong {
+    font-size: 24px;
+  }
+  .profile-money > div:first-child strong {
+    font-size: 34px;
+  }
+  .profile-money > button {
+    justify-self: stretch;
+  }
+  .member-main h2 {
+    font-size: 24px;
+  }
+  .member-numbers {
+    gap: 30px;
+  }
+  .member-numbers strong {
+    font-size: 34px;
+  }
+  .ranking-list li,
+  .reward-list li,
+  .link-history li {
+    gap: 10px;
+    font-size: 13px;
+  }
+  .ranking-list small,
+  .reward-list small {
+    font-size: 12px;
+  }
+  .created-link {
+    padding: 14px;
+  }
+  .created-link .section-heading {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .created-link strong {
+    font-size: 14px;
+  }
+  .member-layout .link-input input {
+    min-width: 0;
+  }
+  .member-layout .link-input .primary {
+    flex-basis: 100%;
+  }
+  .community-aside h2 {
+    font-size: 22px;
+  }
+}

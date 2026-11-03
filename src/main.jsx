@@ -14,8 +14,20 @@ import {
   DealArt,
 } from "./components";
 import { Admin } from "./pages/Admin";
+import {
+  QuickActions,
+  HomeCommunity,
+  Feed,
+  Leaderboard,
+  MemberPage,
+  AccountOverview,
+  HelpPage,
+  LinkHistory,
+  copyText,
+} from "./pages/Community";
 import "./styles.css";
 import "./redesign.css";
+import "./community.css";
 import { Context, useApp } from "./context";
 const nav = [
   ["home", "Trang chủ", "home"],
@@ -31,7 +43,7 @@ function App() {
     [page, setPage] = useState(
       location.pathname === "/demo-shop"
         ? "demo"
-        : location.hash.slice(1) || "home",
+        : location.hash.slice(1).split("?")[0] || "home",
     ),
     [modal, setModal] = useState(null),
     [toast, setToast] = useState("");
@@ -50,7 +62,7 @@ function App() {
       setPage(
         location.pathname === "/demo-shop"
           ? "demo"
-          : location.hash.slice(1) || "home",
+          : location.hash.slice(1).split("?")[0] || "home",
       );
     window.addEventListener("hashchange", handler);
     return () => window.removeEventListener("hashchange", handler);
@@ -70,7 +82,12 @@ function App() {
       location.hash = value;
       setPage(value);
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({
+      top: 0,
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+    });
   };
   const mutate = async (path, body, method = "POST") => {
     const result = await api(path, { method, body });
@@ -119,6 +136,16 @@ function App() {
       profile: "Tài khoản của bạn",
       admin: "Không gian quản trị",
       demo: "Cửa hàng mô phỏng",
+      feed: "Bảng tin Lá",
+      links: "Tạo link hoàn tiền",
+      settings: "Cài đặt tài khoản",
+      help: "Hỏi đáp & hỗ trợ",
+      checkin: "Điểm danh mỗi ngày",
+      membership: "Hạng thành viên",
+      referrals: "Giới thiệu bạn bè",
+      ranking: "Bảng xếp hạng",
+      gifts: "Mã quà tặng",
+      rewards: "Phần thưởng của tôi",
     }[page] || "Lá Cashback";
   return (
     <Context.Provider value={context}>
@@ -163,6 +190,24 @@ function App() {
               </button>
             )}
           </nav>
+          <nav className="secondary-nav" aria-label="Khám phá Lá">
+            {[
+              ["links", "Tạo link hoàn tiền", "link"],
+              ["feed", "Bảng tin", "feed"],
+              ["checkin", "Điểm danh", "calendar"],
+              ["ranking", "Bảng xếp hạng", "trophy"],
+            ].map(([key, label, icon]) => (
+              <button
+                key={key}
+                className={"nav-item " + (page === key ? "active" : "")}
+                aria-current={page === key ? "page" : undefined}
+                onClick={() => navigate(key)}
+              >
+                <Icon name={icon} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
           <div className="sidebar-bottom">
             <div className="little-leaf">
               <Icon name="leaf" size={26} />
@@ -176,7 +221,7 @@ function App() {
                 Tìm hiểu cách hoạt động <Icon name="arrow" size={15} />
               </button>
             </div>
-            <button className="nav-item" onClick={() => setModal("support")}>
+            <button className="nav-item" onClick={() => navigate("help")}>
               <Icon name="help" />
               Trung tâm hỗ trợ
             </button>
@@ -274,6 +319,33 @@ function App() {
             )}
             {page === "home" ? (
               <Home />
+            ) : page === "feed" ? (
+              <Feed />
+            ) : page === "ranking" ? (
+              <Leaderboard />
+            ) : page === "help" ? (
+              <HelpPage />
+            ) : page === "links" ? (
+              <div className="member-layout">
+                <section className="panel">
+                  <h2>Dán link, bắt đầu nhận lại</h2>
+                  <LinkBox />
+                  {boot.user && <LinkHistory />}
+                </section>
+                <aside className="panel">
+                  <h2>Hành trình hoàn tiền</h2>
+                  <ol className="link-steps">
+                    <li>Sao chép link sản phẩm Shopee.</li>
+                    <li>Tạo link theo dõi tại Lá.</li>
+                    <li>Mở cửa hàng mô phỏng và tạo đơn thử.</li>
+                    <li>Theo dõi đối soát trong Đơn hàng.</li>
+                  </ol>
+                  <p className="muted">
+                    Chưa hỗ trợ affiliate thật hoặc các sàn khác. Không tự cộng
+                    tiền khi tạo link.
+                  </p>
+                </aside>
+              </div>
             ) : page === "deals" ? (
               <Deals />
             ) : page === "demo" ? (
@@ -296,7 +368,17 @@ function App() {
             ) : page === "wallet" ? (
               <Wallet />
             ) : page === "profile" ? (
+              <AccountOverview />
+            ) : page === "settings" ? (
               <Profile />
+            ) : [
+                "checkin",
+                "membership",
+                "referrals",
+                "gifts",
+                "rewards",
+              ].includes(page) ? (
+              <MemberPage key={page} section={page} />
             ) : page === "admin" && boot.user.role === "admin" ? (
               <Admin />
             ) : (
@@ -324,15 +406,6 @@ function App() {
               <span>{label}</span>
             </button>
           ))}
-          {boot.user?.role === "admin" && (
-            <button
-              className={page === "admin" ? "active" : ""}
-              onClick={() => navigate("admin")}
-            >
-              <Icon name="grid" size={21} />
-              <span>Quản trị</span>
-            </button>
-          )}
         </nav>
         {toast && (
           <div className="toast" role="status">
@@ -365,6 +438,7 @@ function Home() {
   ];
   return (
     <div className="home-dashboard">
+      <QuickActions />
       <section className="shopping-intro" aria-labelledby="shopping-title">
         <div className="botanical-mark" aria-hidden="true">
           <Icon name="leaf" size={190} />
@@ -492,6 +566,7 @@ function Home() {
           </button>
         </section>
       </div>
+      <HomeCommunity />
     </div>
   );
 }
@@ -538,6 +613,7 @@ function LinkBox({ initialUrl = "" }) {
   const { boot, mutate, setModal, setToast } = useApp();
   const [value, setValue] = useState(initialUrl),
     [checked, setChecked] = useState(null),
+    [created, setCreated] = useState(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const check = async (e) => {
@@ -549,9 +625,15 @@ function LinkBox({ initialUrl = "" }) {
     setBusy(true);
     setError("");
     try {
-      setChecked(
-        await api("/links/inspect", { method: "POST", body: { url: value } }),
-      );
+      setChecked(null);
+      setCreated(null);
+      const result = await api("/links/inspect", {
+        method: "POST",
+        body: { url: value },
+      });
+      const click = await mutate("/clicks", { url: result.url });
+      setChecked(result);
+      setCreated(click);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -562,7 +644,7 @@ function LinkBox({ initialUrl = "" }) {
     setBusy(true);
     setError("");
     try {
-      const click = await mutate("/clicks", { url: checked.url });
+      const click = created || (await mutate("/clicks", { url: checked.url }));
       setToast("Đã tạo lượt theo dõi demo. Chưa có tiền hoàn được cộng.");
       location.assign(click.redirectUrl);
     } catch (e) {
@@ -588,6 +670,7 @@ function LinkBox({ initialUrl = "" }) {
             onChange={(e) => {
               setValue(e.target.value);
               setChecked(null);
+              setCreated(null);
               setError("");
             }}
           />
@@ -600,6 +683,7 @@ function LinkBox({ initialUrl = "" }) {
                 const text = await navigator.clipboard.readText();
                 setValue(text);
                 setChecked(null);
+                setCreated(null);
                 setError("");
               } catch {
                 setToast("Hãy nhấn giữ ô nhập hoặc dùng Ctrl+V để dán link.");
@@ -630,21 +714,45 @@ function LinkBox({ initialUrl = "" }) {
         </div>
       )}
       {checked && (
-        <div className="inspection">
-          <span className="inspection-icon">
-            <Icon name="bag" />
-          </span>
-          <div>
-            <strong>Thông tin sản phẩm: Chưa xác định</strong>
-            <p>
-              Tiền hoàn dự kiến: <b>Chưa xác định</b>
-            </p>
-            <small>{checked.message}</small>
+        <>
+          {created && (
+            <div className="created-link">
+              <div className="section-heading">
+                <strong>
+                  <Icon name="check" size={17} /> Đã tạo link theo dõi demo
+                </strong>
+                <button
+                  className="button compact"
+                  onClick={() =>
+                    copyText(location.origin + created.redirectUrl, setToast)
+                  }
+                >
+                  <Icon name="copy" size={15} />
+                  Sao chép
+                </button>
+              </div>
+              <a href={created.redirectUrl}>
+                {location.origin + created.redirectUrl}
+              </a>
+              <small>Link này mở cửa hàng mô phỏng của tài khoản bạn.</small>
+            </div>
+          )}
+          <div className="inspection">
+            <span className="inspection-icon">
+              <Icon name="bag" />
+            </span>
+            <div>
+              <strong>Thông tin sản phẩm: Chưa xác định</strong>
+              <p>
+                Tiền hoàn dự kiến: <b>Chưa xác định</b>
+              </p>
+              <small>{checked.message}</small>
+            </div>
+            <button className="button primary" onClick={buy} disabled={busy}>
+              Mua hàng nhận hoàn tiền <Icon name="external" size={15} />
+            </button>
           </div>
-          <button className="button primary" onClick={buy} disabled={busy}>
-            Mua hàng nhận hoàn tiền <Icon name="external" size={15} />
-          </button>
-        </div>
+        </>
       )}
     </div>
   );
@@ -1061,7 +1169,7 @@ function Wallet() {
                   </Empty>
                   <button
                     className="button"
-                    onClick={() => navigate("profile")}
+                    onClick={() => navigate("settings")}
                   >
                     Mở Cá nhân
                   </button>
@@ -1259,8 +1367,9 @@ function Profile() {
               disabled
             />
             <p className="microcopy">
-              Nếu cần đặt lại mật khẩu, dùng chức năng “Quên mật khẩu” tại màn
-              hình đăng nhập. Bản demo hiển thị mã thử ngay trên màn hình.
+              {boot.publicDemo
+                ? "Bản demo trực tuyến chưa hỗ trợ đặt lại mật khẩu qua email. Liên hệ chủ đề án nếu cần hỗ trợ tài khoản."
+                : "Nếu cần đặt lại mật khẩu, dùng “Quên mật khẩu” tại màn hình đăng nhập. Bản cục bộ hiển thị mã thử ngay trên màn hình."}
             </p>
           </Form>
           <button
@@ -1599,7 +1708,9 @@ function Support({ orderId = null, onClose }) {
             submitLabel="Gửi yêu cầu hỗ trợ"
             onSubmit={async (v) => {
               await mutate("/tickets", { ...v, orderId });
-              setToast("Đã gửi yêu cầu. Xem phản hồi trong Cá nhân.");
+              setToast(
+                "Đã gửi yêu cầu. Xem phản hồi trong Cá nhân → Thông tin cá nhân.",
+              );
               close();
             }}
           >

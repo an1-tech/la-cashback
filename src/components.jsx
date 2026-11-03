@@ -2,6 +2,32 @@ import React, { useEffect, useRef, useState } from "react";
 import { api, statusLabels } from "./api";
 export function Icon({ name, size = 20, ...props }) {
   const paths = {
+    feed: (
+      <>
+        <rect x="4" y="3" width="16" height="18" rx="2" />
+        <path d="M8 7h8M8 11h8M8 15h5" />
+      </>
+    ),
+    calendar: (
+      <>
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M7 2v6m10-6v6M3 11h18m-14 5 3 3 6-5" />
+      </>
+    ),
+    trophy: (
+      <>
+        <path d="M7 3h10v7a5 5 0 0 1-10 0ZM7 5H3v3a4 4 0 0 0 4 4m10-7h4v3a4 4 0 0 1-4 4m-5 3v6m-4 0h8" />
+      </>
+    ),
+    users: (
+      <>
+        <circle cx="9" cy="7" r="3" />
+        <path d="M2 21v-3a7 7 0 0 1 14 0v3M16 4a3 3 0 0 1 0 6m3 4a6 6 0 0 1 3 5v2" />
+      </>
+    ),
+    heart: (
+      <path d="M20.5 4.5a5 5 0 0 0-7 0L12 6l-1.5-1.5a5 5 0 0 0-7 7L12 20l8.5-8.5a5 5 0 0 0 0-7Z" />
+    ),
     home: (
       <>
         <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z" />
