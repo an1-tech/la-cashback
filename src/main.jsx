@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { api, setCsrf, money, date } from "./api";
 import {
@@ -15,6 +15,7 @@ import {
 } from "./components";
 import { Admin } from "./pages/Admin";
 import "./styles.css";
+import "./redesign.css";
 import { Context, useApp } from "./context";
 const nav = [
   ["home", "Trang chủ", "home"],
@@ -111,7 +112,7 @@ function App() {
   };
   const title =
     {
-      home: "Tổng quan",
+      home: "Trang chủ",
       orders: "Đơn hàng của bạn",
       deals: "Khám phá ưu đãi",
       wallet: "Số dư & rút tiền",
@@ -204,7 +205,6 @@ function App() {
         <div className="workspace">
           <header className="topbar">
             <div className="breadcrumb">
-              Không gian của bạn <Icon name="chevron" size={13} />
               <strong>{title}</strong>
             </div>
             <a className="mobile-brand" href="/#home">
@@ -222,7 +222,7 @@ function App() {
               </button>
               <span className="demo-pill">
                 <span />
-                Chế độ demo
+                DEMO
               </span>
               <button
                 className="icon-button notification-button"
@@ -324,6 +324,15 @@ function App() {
               <span>{label}</span>
             </button>
           ))}
+          {boot.user?.role === "admin" && (
+            <button
+              className={page === "admin" ? "active" : ""}
+              onClick={() => navigate("admin")}
+            >
+              <Icon name="grid" size={21} />
+              <span>Quản trị</span>
+            </button>
+          )}
         </nav>
         {toast && (
           <div className="toast" role="status">
@@ -348,228 +357,184 @@ function App() {
 }
 function Home() {
   const { boot, navigate, setModal } = useApp();
+  const openWallet = () => (boot.user ? navigate("wallet") : setModal("auth"));
+  const categories = [
+    ["Công nghệ", "Tai nghe", 0],
+    ["Làm đẹp", "Chăm sóc da", 1],
+    ["Thời trang", "Thời trang", 2],
+  ];
   return (
-    <>
-      <div className="welcome">
-        <div>
-          <p className="eyebrow">
-            MỘT NGÀY MUA SẮM THẬT VUI <span>✦</span>
-          </p>
-          <h1>
-            Xin chào, {boot.user ? boot.user.name : "bạn mới"}
-            <span className="greeting-dot">.</span>
-          </h1>
-          <p>Món đồ bạn thích, thêm một khoản hoàn xinh.</p>
+    <div className="home-dashboard">
+      <section className="shopping-intro" aria-labelledby="shopping-title">
+        <div className="botanical-mark" aria-hidden="true">
+          <Icon name="leaf" size={190} />
         </div>
-        <button
-          className="subtle-button desktop-only"
-          onClick={() => setModal("guide")}
-        >
-          <Icon name="help" size={17} />
-          Bạn mới? Bắt đầu ở đây <Icon name="arrow" size={16} />
-        </button>
-      </div>
-      <section className="hero">
-        <div className="hero-copy">
-          <span className="hero-label">
-            <span className="shopee-mini">S</span> MUA SẮM TRÊN SHOPEE, BẮT ĐẦU
-            TỪ LÁ
-          </span>
-          <h2>
-            Mua sắm như thường.
+        <h1 id="shopping-title">
+          <span className="desktop-title">
+            Mua món bạn thích.
             <br />
-            <em>Nhận lại nhiều hơn.</em>
-          </h2>
-          <p>{boot.content.banner}</p>
+            <em>Nhận lại một chút vui.</em>
+          </span>
+          <span className="phone-title">
+            Mua sắm.
+            <br />
+            <em>Nhận lại.</em>
+          </span>
+        </h1>
+        <div className="composer-panel">
           <LinkBox />
         </div>
-        <div className="hero-visual" aria-hidden="true">
-          <div className="orbit orbit-one" />
-          <div className="orbit orbit-two" />
-          <div className="hero-spark spark-one">✦</div>
-          <div className="hero-spark spark-two">✧</div>
-          <div className="floating-leaf">
-            <Icon name="leaf" size={39} />
-          </div>
-          <div className="visual-card">
+      </section>
+      <section className="wallet-overview" aria-labelledby="wallet-title">
+        <div className="section-heading">
+          <h2 id="wallet-title">Ví hoàn tiền</h2>
+          <button className="text-button" onClick={openWallet}>
+            Xem chi tiết <Icon name="arrow" size={16} />
+          </button>
+        </div>
+        <div className="wallet-summary">
+          <div className="wallet-available">
+            <span>Có thể rút</span>
             <div>
-              <span>LÁ CASHBACK</span>
-              <Icon name="leaf" size={28} />
+              <strong>
+                {boot.balances ? money(boot.balances.available) : "—"}
+              </strong>
+              <button className="withdraw-shortcut" onClick={openWallet}>
+                Rút tiền
+              </button>
             </div>
-            <small>Niềm vui từ mỗi lần mua</small>
+            {!boot.user && <small>Đăng nhập để xem số dư</small>}
+          </div>
+          <div>
+            <span>Đang chờ duyệt</span>
             <strong>
-              mua sắm.
-              <br />
-              nhận lại.
+              {boot.balances ? money(boot.balances.pending) : "—"}
             </strong>
-            <div className="visual-card-footer">
-              <span>SHOP SMART. GET MORE.</span>
-              <span className="card-circles">
-                <i />
-                <i />
-              </span>
-            </div>
           </div>
-          <div className="floating-chip">
-            <span>
-              <Icon name="check" size={15} />
-            </span>
-            Rõ ràng từng khoản hoàn
+          <div>
+            <span>Đã thanh toán</span>
+            <strong>{boot.balances ? money(boot.balances.paid) : "—"}</strong>
           </div>
         </div>
-      </section>
-      <div className="trust-row">
-        <span>
-          <Icon name="shield" size={16} />
-          Theo dõi minh bạch
-        </span>
-        <span>
-          <Icon name="wallet" size={16} />
-          Rút theo số dư khả dụng
-        </span>
-        <span>
-          <Icon name="lock" size={16} />
-          Bảo vệ tài khoản của bạn
-        </span>
-      </div>
-      <section className="section">
-        <div className="section-heading">
-          <h2>
-            Ví hoàn tiền của bạn <span className="small-demo">DEMO</span>
-          </h2>
-          <button
-            className="text-button"
-            onClick={() => (boot.user ? navigate("wallet") : setModal("auth"))}
-          >
-            Xem chi tiết <Icon name="arrow" size={15} />
-          </button>
-        </div>
-        <div className="balance-grid">
-          {[
-            [
-              "available",
-              "Có thể rút",
-              "wallet",
-              "Đủ điều kiện để yêu cầu rút",
-            ],
-            [
-              "pending",
-              "Đang chờ duyệt",
-              "clock",
-              "Cần nguồn đối soát xác nhận",
-            ],
-            ["paid", "Đã thanh toán", "check", "Tổng tiền đã trả mô phỏng"],
-          ].map(([key, label, icon, sub], i) => (
-            <button
-              key={key}
-              className={"balance-card " + (i === 0 ? "featured" : "")}
-              onClick={() =>
-                boot.user ? navigate("wallet") : setModal("auth")
-              }
-            >
-              <div>
-                <span className="balance-icon">
-                  <Icon name={icon} />
-                </span>
-                <span>{label}</span>
-                <Icon name="chevron" size={15} />
-              </div>
-              <strong>{boot.balances ? money(boot.balances[key]) : "—"}</strong>
-              <small>{boot.user ? sub : "Đăng nhập để xem số dư"}</small>
-            </button>
-          ))}
-        </div>
-      </section>
-      <section className="section">
-        <div className="section-heading">
-          <h2>
-            Nhận hoàn tiền thật dễ{" "}
-            <span className="muted-label">Chỉ 3 bước</span>
-          </h2>
-          <button className="text-button" onClick={() => setModal("guide")}>
-            Xem hướng dẫn <Icon name="arrow" size={15} />
-          </button>
-        </div>
-        <div className="steps">
-          {[
-            [
-              "01",
-              "link",
-              "Dán link sản phẩm",
-              "Tìm món bạn thích trên Shopee, sao chép link và dán vào Lá.",
-            ],
-            [
-              "02",
-              "bag",
-              "Mua qua link theo dõi",
-              "Tạo lượt theo dõi tại Lá trước khi tiếp tục mua hàng.",
-            ],
-            [
-              "03",
-              "wallet",
-              "Chờ duyệt, nhận tiền hoàn",
-              "Tiền được rút sau khi hoa hồng hợp lệ và đủ điều kiện.",
-            ],
-          ].map(([no, icon, title, body]) => (
-            <div className="step" key={no}>
-              <span className="step-icon">
-                <Icon name={icon} />
-              </span>
-              <div>
-                <span className="step-number">BƯỚC {no}</span>
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-      <section className="section">
-        <div className="section-heading">
-          <h2>
-            Một chút ưu đãi, thêm nhiều niềm vui <span className="live-dot" />
-          </h2>
-          <button className="text-button" onClick={() => navigate("deals")}>
-            Tất cả ưu đãi <Icon name="arrow" size={15} />
-          </button>
-        </div>
-        <div className="deal-grid">
-          {boot.deals.slice(0, 4).map((deal, i) => (
-            <DealCard key={deal.id} deal={deal} index={i} />
-          ))}
-        </div>
-        <p className="microcopy">
-          Các deal và mã giảm giá trên bản demo chỉ để minh họa, không có giá
-          trị sử dụng thực tế.
-        </p>
-      </section>
-      <div className="help-strip">
-        <span className="help-strip-icon">
-          <Icon name="shield" size={27} />
-        </span>
-        <div>
-          <h3>Tiền hoàn rõ ràng, an tâm mua sắm.</h3>
-          <p>
-            Tiền dự kiến chưa thể rút. Không hủy đơn chưa đồng nghĩa với có hoa
-            hồng.
-          </p>
-        </div>
-        <button className="text-button" onClick={() => setModal("guide")}>
-          Hiểu thêm <Icon name="arrow" size={16} />
+        <button
+          className="journey-strip"
+          onClick={() => setModal("guide")}
+          aria-label="Xem hướng dẫn nhận hoàn tiền"
+        >
+          <span>
+            <Icon name="link" />
+            Dán link
+          </span>
+          <Icon name="chevron" size={14} />
+          <span>
+            <Icon name="bag" />
+            Mua hàng qua Lá
+          </span>
+          <Icon name="chevron" size={14} />
+          <span>
+            <Icon name="clock" />
+            Chờ duyệt hoàn tiền
+          </span>
         </button>
-      </div>
-      {!boot.user && (
-        <div className="demo-entry">
-          <p>Muốn thử toàn bộ hành trình?</p>
-          <button className="button" onClick={() => setModal("auth")}>
-            Trải nghiệm tài khoản demo <Icon name="arrow" size={16} />
+      </section>
+      <div className="home-lower-grid">
+        <section className="discover-panel" aria-labelledby="discover-title">
+          <div className="section-heading">
+            <h2 id="discover-title">Khám phá hôm nay</h2>
+            <button className="text-button" onClick={() => navigate("deals")}>
+              Xem tất cả <Icon name="arrow" size={15} />
+            </button>
+          </div>
+          <div className="discovery-grid">
+            {categories.map(([category, label, index]) => (
+              <button
+                className="discovery-card"
+                key={category}
+                onClick={() => {
+                  sessionStorage.setItem("la-deal-category", category);
+                  navigate("deals");
+                }}
+              >
+                <span
+                  className={"category-photo photo-" + index}
+                  role="img"
+                  aria-label={label + " minh họa"}
+                />
+                <strong>{label}</strong>
+                <small>Ưu đãi minh họa</small>
+                <span className="discovery-action">
+                  Khám phá <Icon name="arrow" size={15} />
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+        <section className="recent-panel" aria-labelledby="recent-title">
+          <div className="section-heading">
+            <h2 id="recent-title">Đơn hàng gần đây</h2>
+          </div>
+          {boot.user ? (
+            <RecentOrders />
+          ) : (
+            <div className="recent-empty">
+              <Icon name="bag" size={30} />
+              <p>Đăng nhập để theo dõi từng khoản hoàn.</p>
+              <button className="button" onClick={() => setModal("auth")}>
+                Đăng nhập
+              </button>
+            </div>
+          )}
+          <button
+            className="text-button recent-all"
+            onClick={() => (boot.user ? navigate("orders") : setModal("auth"))}
+          >
+            Xem đơn hàng <Icon name="arrow" size={16} />
           </button>
-        </div>
-      )}
-    </>
+        </section>
+      </div>
+    </div>
+  );
+}
+function RecentOrders() {
+  const { version, navigate } = useApp();
+  const state = useData("/orders", version);
+  return (
+    <DataState state={state}>
+      {(rows) =>
+        rows.length ? (
+          <div className="recent-orders">
+            {rows.slice(0, 3).map((order) => (
+              <button
+                className="recent-order"
+                key={order.id}
+                onClick={() => navigate("orders")}
+              >
+                <span className="recent-order-icon">
+                  <Icon name="bag" size={23} />
+                </span>
+                <span>
+                  <strong>{order.title}</strong>
+                  <Badge status={order.status} />
+                </span>
+                <Icon name="chevron" size={14} />
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="recent-empty">
+            <Icon name="bag" size={30} />
+            <p>Chưa có đơn hàng được ghi nhận.</p>
+            <small>
+              Đơn hàng sẽ xuất hiện sau khi nhận báo cáo từ nguồn đối soát.
+            </small>
+          </div>
+        )
+      }
+    </DataState>
   );
 }
 function LinkBox({ initialUrl = "" }) {
+  const inputId = useId();
   const { boot, mutate, setModal, setToast } = useApp();
   const [value, setValue] = useState(initialUrl),
     [checked, setChecked] = useState(null),
@@ -607,14 +572,16 @@ function LinkBox({ initialUrl = "" }) {
   };
   return (
     <div className="link-box">
+      <label className="link-visible-label" htmlFor={inputId}>Dán link sản phẩm Shopee</label>
       <form onSubmit={check}>
         <div className="link-input">
           <Icon name="link" size={20} />
           <input
+            id={inputId}
             aria-label="Link sản phẩm Shopee"
             type="url"
             required
-            placeholder="Dán link sản phẩm Shopee vào đây…"
+            placeholder="https://shopee.vn/..."
             value={value}
             onChange={(e) => {
               setValue(e.target.value);
@@ -622,6 +589,24 @@ function LinkBox({ initialUrl = "" }) {
               setError("");
             }}
           />
+          <button
+            type="button"
+            className="paste-link"
+            aria-label="Dán link từ bộ nhớ tạm"
+            onClick={async () => {
+              try {
+                const text = await navigator.clipboard.readText();
+                setValue(text);
+                setChecked(null);
+                setError("");
+              } catch {
+                setToast("Hãy nhấn giữ ô nhập hoặc dùng Ctrl+V để dán link.");
+              }
+            }}
+          >
+            <Icon name="copy" size={16} />
+            Dán
+          </button>
           <button className="button primary" disabled={busy}>
             {busy ? (
               <span className="spinner" />
@@ -635,7 +620,7 @@ function LinkBox({ initialUrl = "" }) {
       </form>
       <div className="link-hint">
         <Icon name="info" size={13} />
-        Hoa hồng và tiền hoàn phụ thuộc dữ liệu đối soát hợp lệ.
+        Tiền hoàn được xác nhận sau khi đối soát.
       </div>
       {error && (
         <div className="alert error" role="alert">
@@ -742,7 +727,11 @@ function DealCard({ deal, index }) {
 function Deals() {
   const { boot } = useApp();
   const [q, setQ] = useState(""),
-    [category, setCategory] = useState("Tất cả"),
+    [category, setCategory] = useState(() => {
+      const value = sessionStorage.getItem("la-deal-category");
+      sessionStorage.removeItem("la-deal-category");
+      return value || "Tất cả";
+    }),
     [saved, setSaved] = useState(false);
   const deals = boot.deals.filter(
     (d) =>

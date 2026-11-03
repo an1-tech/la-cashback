@@ -8,11 +8,16 @@ test("Desktop: mở React, đăng nhập, ví và giao diện sáng/tối", asyn
   await page.setViewportSize({ width: 1440, height: 1100 });
   const response = await page.goto("/");
   expect(response.status()).toBe(200);
-  await expect(page.getByRole("heading", { name: /Xin chào/ })).toBeVisible();
-  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: /Mua món bạn thích|Mua sắm/ }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Đăng nhập", exact: true })
+    .first()
+    .click();
   await page.getByRole("dialog").locator('button[type="submit"]').click();
   await expect(
-    page.getByRole("heading", { name: "Xin chào, Minh Anh." }),
+    page.getByRole("heading", { name: /Mua món bạn thích|Mua sắm/ }),
   ).toBeVisible();
   await expect(page.getByText("76.000 đ", { exact: true })).toBeVisible();
   mkdirSync("artifacts/screenshots", { recursive: true });
@@ -46,7 +51,9 @@ test("Điện thoại 390px: điều hướng, lọc ưu đãi, lưu deal và kh
   await expect(
     page.getByRole("navigation", { name: "Điều hướng điện thoại" }),
   ).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Xin chào/ })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /Mua món bạn thích|Mua sắm/ }),
+  ).toBeVisible();
   await page.screenshot({
     path: "artifacts/screenshots/mobile-home.png",
     fullPage: true,
@@ -63,10 +70,13 @@ test("Điện thoại 390px: điều hướng, lọc ưu đãi, lưu deal và kh
   await page
     .getByRole("button", { name: "Đổi chế độ sáng tối", exact: true })
     .click();
-  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Đăng nhập", exact: true })
+    .first()
+    .click();
   await page.getByRole("dialog").locator('button[type="submit"]').click();
   await expect(
-    page.getByRole("heading", { name: /Xin chào, Minh Anh/ }),
+    page.getByRole("heading", { name: /Mua món bạn thích|Mua sắm/ }),
   ).toBeVisible();
   await page
     .getByRole("navigation", { name: "Điều hướng điện thoại" })
@@ -112,7 +122,10 @@ test("Luồng React: đăng ký → link → đơn demo → quản trị duyệt
 }) => {
   const email = "ui-" + Date.now() + "@demo.local";
   await page.goto("/");
-  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Đăng nhập", exact: true })
+    .first()
+    .click();
   const auth = page.getByRole("dialog");
   await auth.getByRole("button", { name: "Đăng ký", exact: true }).click();
   await auth.getByLabel("Tên của bạn").fill("Người thử UI");
@@ -147,7 +160,7 @@ test("Luồng React: đăng ký → link → đơn demo → quản trị duyệt
   const adminContext = await browser.newContext();
   const admin = await adminContext.newPage();
   await admin.goto("http://127.0.0.1:3081/");
-  await admin.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await admin.getByRole("banner").getByRole("button", { name: "Đăng nhập", exact: true }).click();
   await admin
     .getByRole("dialog")
     .getByRole("button", { name: "Quản trị", exact: true })
@@ -214,7 +227,10 @@ test("Quản trị: nhập JSON có lỗi từng dòng, trùng sự kiện và �
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Đăng nhập", exact: true })
+    .first()
+    .click();
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "Quản trị", exact: true })
