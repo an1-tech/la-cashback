@@ -1,16 +1,46 @@
 import { openDb } from "./db.js";
 import { seed } from "./seed.js";
 import { createApp } from "./app.js";
+import { passwordMatches } from "./security.js";
+import { DEMO_PASSWORD } from "./seed.js";
 if (process.env.DEMO_MODE === "false")
   throw new Error(
     "Chưa có adapter đã xác minh cho vận hành thật. Bản này chỉ cho phép demo.",
   );
+const publicDemo = process.env.PUBLIC_DEMO === "true";
+const adminPassword = process.env.DEMO_ADMIN_PASSWORD;
+if (
+  publicDemo &&
+  (!adminPassword ||
+    adminPassword.length < 16 ||
+    adminPassword === DEMO_PASSWORD)
+)
+  throw new Error(
+    "PUBLIC_DEMO cần DEMO_ADMIN_PASSWORD riêng, ít nhất 16 ký tự.",
+  );
+if (publicDemo && process.env.COOKIE_SECURE !== "true")
+  throw new Error(
+    "PUBLIC_DEMO cần COOKIE_SECURE=true và HTTPS ở reverse proxy.",
+  );
 const db = openDb();
-seed(db);
+seed(db, { adminPassword });
+if (
+  publicDemo &&
+  db
+    .prepare("SELECT password_hash FROM users WHERE role='admin'")
+    .all()
+    .some((u) => passwordMatches(DEMO_PASSWORD, u.password_hash))
+) {
+  db.close();
+  throw new Error(
+    "DB còn tài khoản quản trị dùng mật khẩu mẫu. Dùng DB online mới hoặc đổi mật khẩu trước khi xuất bản.",
+  );
+}
 const host = process.env.HOST || "127.0.0.1",
   port = Number(process.env.PORT || 3080);
 const server = createApp(db, {
   secureCookie: process.env.COOKIE_SECURE === "true",
+  publicDemo,
 });
 server.requestTimeout = 15000;
 server.headersTimeout = 10000;

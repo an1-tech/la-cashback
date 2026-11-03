@@ -1,6 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { transaction, now } from "./db.js";
-import { ensure, integer, textInput, isoDate, hash } from "./security.js";
+import {
+  ensure,
+  integer,
+  textInput,
+  optionalText,
+  idInput,
+  isoDate,
+  hash,
+} from "./security.js";
 export const id = () => randomUUID();
 export function cashback(commission, shareBps) {
   integer(commission, "Hoa hồng");
@@ -258,6 +266,8 @@ export function ingestReport(db, raw, actor) {
   });
 }
 export function resolveUnmatched(db, eventId, clickId, reason, actor) {
+  idInput(eventId, "Mã sự kiện");
+  idInput(clickId, "Mã lượt bấm");
   return transaction(db, () => {
     const ev = db
       .prepare(
@@ -357,6 +367,9 @@ export function processWithdrawal(
   reference,
   actor,
 ) {
+  idInput(withdrawalId, "Mã yêu cầu");
+  reason = optionalText(reason, "Lý do");
+  reference = optionalText(reference, "Mã thanh toán mô phỏng", 100);
   return transaction(db, () => {
     const w = db
       .prepare("SELECT * FROM withdrawals WHERE id=?")
@@ -463,6 +476,11 @@ export function addPolicy(db, input, actor) {
       ),
       effective_at: isoDate(input.effectiveAt, "Thời gian hiệu lực"),
     };
+    // Cho phép lệch 5 phút do đồng hồ máy; không cho đặt hiệu lực lùi về quá khứ.
+    ensure(
+      Date.parse(p.effective_at) >= Date.now() - 5 * 60000,
+      "Thời gian hiệu lực không được lùi về quá khứ.",
+    );
     db.prepare("INSERT INTO policies VALUES (?,?,?,?,?,?,?,?)").run(
       p.id,
       p.version,
@@ -478,6 +496,7 @@ export function addPolicy(db, input, actor) {
   });
 }
 export function adjustBalance(db, userId, amount, reason, reference, actor) {
+  idInput(userId, "Mã người dùng");
   integer(amount, "Điều chỉnh", -1_000_000_000, 1_000_000_000);
   ensure(amount !== 0, "Số điều chỉnh phải khác 0.");
   textInput(reason, "Lý do", 500, 10);

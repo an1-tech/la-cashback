@@ -192,7 +192,7 @@ function Reconcile({ data }) {
                   </small>
                   <small>Chính sách v{o.version}</small>
                 </td>
-                <td>{o.email}</td>
+                <td className="email">{o.email}</td>
                 <td>{money(o.commission)}</td>
                 <td>{money(o.cashback)}</td>
                 <td>
@@ -431,7 +431,7 @@ function Withdrawals({ data }) {
               return (
                 <tr key={w.id}>
                   <td>
-                    {w.email}
+                    <span className="email">{w.email}</span>
                     <small className="mono">{w.id}</small>
                     <small>{date(w.created_at)}</small>
                   </td>
@@ -533,7 +533,10 @@ function Policies({ data }) {
               shareBps: Number(v.shareBps),
               holdDays: Number(v.holdDays),
               minimumWithdrawal: Number(v.minimumWithdrawal),
-              effectiveAt: new Date(v.effectiveAt).toISOString(),
+              // Thời điểm đã qua (form để lâu) được tính là ngay bây giờ.
+              effectiveAt: new Date(
+                Math.max(Date.now(), new Date(v.effectiveAt).getTime()),
+              ).toISOString(),
             });
             setToast("Đã thêm phiên bản chính sách.");
           }}
@@ -577,6 +580,10 @@ function Policies({ data }) {
             defaultValue={localTime()}
             required
           />
+          <p className="microcopy">
+            Không thể đặt hiệu lực lùi về quá khứ. Thời điểm đã qua sẽ được tính
+            là ngay bây giờ.
+          </p>
         </Form>
       </section>
       <section className="panel">
@@ -917,7 +924,7 @@ function Audit({ data }) {
           {data.audit.map((a) => (
             <tr key={a.id}>
               <td>{date(a.created_at)}</td>
-              <td>{a.email}</td>
+              <td className="email">{a.email}</td>
               <td>
                 <code>{a.action}</code>
               </td>

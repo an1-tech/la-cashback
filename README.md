@@ -1,6 +1,6 @@
 # Lá Cashback — MVP React
 
-Ứng dụng Affiliate + Cashback tiếng Việt, ưu tiên điện thoại. **Bản này chỉ chạy demo cục bộ. Chưa kết nối Shopee hoặc ngân hàng. Không có tiền thật.** Không có API Shopee, tỷ lệ hoa hồng Shopee hoặc thời gian ghi nhận nào được giả định.
+Ứng dụng Affiliate + Cashback tiếng Việt, ưu tiên điện thoại. **Demo học tập, chạy local hoặc triển khai online theo [hướng dẫn Render](docs/RENDER.md). Chưa kết nối Shopee hoặc ngân hàng. Không có tiền thật.** Không có API Shopee, tỷ lệ hoa hồng Shopee hoặc thời gian ghi nhận nào được giả định.
 
 ## Chạy nhanh
 
@@ -114,7 +114,7 @@ docker run --rm -p 127.0.0.1:3080:3080 -v la-demo-data:/app/data la-cashback-dem
 
 DB SQLite WAL dùng cho một máy/volume local; không đặt trên ổ mạng hoặc chạy nhiều replica. Sao lưu bằng SQLite backup API (hoặc dừng server rồi sao chép DB nhất quán), giữ quyền truy cập thư mục data. Không copy riêng file `.sqlite` trong lúc ghi mà bỏ qua WAL. Muốn nhiều máy ghi, cần migration sang PostgreSQL và giữ các ràng buộc/transaction tương đương.
 
-`DEMO_MODE=false` cố ý làm server từ chối khởi động. Chuyển sang thật cần triển khai các điều kiện trong `docs/PRODUCTION.md`, không chỉ đổi một biến môi trường. Không xuất bản bản demo với tài khoản mẫu lên Internet.
+`DEMO_MODE=false` cố ý làm server từ chối khởi động. Chuyển sang giao dịch thật cần triển khai các điều kiện trong `docs/PRODUCTION.md`, không chỉ đổi một biến môi trường. Demo online phải dùng `PUBLIC_DEMO=true`, HTTPS, `COOKIE_SECURE=true`, mật khẩu admin riêng trong `DEMO_ADMIN_PASSWORD` và DB riêng. Không dùng DB local chứa dữ liệu nhạy cảm. Render Free mất SQLite khi ngủ/restart/redeploy; hướng dẫn đầy đủ trong `docs/RENDER.md`.
 
 ## Giới hạn rõ ràng
 

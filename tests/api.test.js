@@ -465,3 +465,88 @@ test("Rate limit tạo link và tài khoản bị khóa không thể dùng phiê
     await f.close();
   }
 });
+test("Đoán sai mật khẩu từ nơi khác không khóa được chủ tài khoản; đúng thì xóa bộ đếm", async () => {
+  const f = await fixture();
+  try {
+    // Kẻ tấn công ở IP khác đã sai 50 lần.
+    f.db
+      .prepare("INSERT INTO rate_limits VALUES (?,?,?)")
+      .run("auth:fail:ban@demo.local:203.0.113.9", 50, Date.now() + 900000);
+    await login(f);
+    const wrong = () =>
+      request(f, "/auth/login", {
+        method: "POST",
+        body: { email: "ban@demo.local", password: "SaiMatKhau1" },
+      });
+    for (let i = 0; i < 9; i++) assert.equal((await wrong()).status, 401);
+    await login(f);
+    for (let i = 0; i < 10; i++) assert.equal((await wrong()).status, 401);
+    assert.equal((await wrong()).status, 429);
+  } finally {
+    await f.close();
+  }
+});
+test("Dữ liệu sai kiểu và URL hỏng trả lỗi 4xx thay vì 500", async () => {
+  const f = await fixture();
+  try {
+    const admin = await login(f, "admin@demo.local");
+    const ov = (await request(f, "/admin/overview", admin)).data;
+    const w = ov.withdrawals[0].id;
+    for (const [path, body, method = "POST"] of [
+      ["/admin/withdrawals", { id: w, action: "approved", reason: { a: 1 } }],
+      ["/admin/withdrawals", { id: { a: 1 }, action: "approved" }],
+      ["/admin/withdrawals", { id: w, action: "paid", reference: ["x"] }],
+      ["/admin/reconcile", { orderId: { a: 1 }, eventId: "evt-12345678" }],
+      [
+        "/admin/resolve",
+        { eventId: [1], clickId: "x", reason: "a".repeat(12) },
+      ],
+      [
+        "/admin/adjustments",
+        {
+          userId: {},
+          amount: 5,
+          reason: "a".repeat(12),
+          reference: "ADJ-12345",
+        },
+      ],
+      ["/admin/users", { id: { a: 1 }, status: "blocked" }, "PATCH"],
+      ["/admin/tickets", { id: [1], response: "xin chào" }],
+      [
+        "/tickets",
+        { orderId: { a: 1 }, subject: "Hỏi đơn", message: "0123456789" },
+      ],
+      ["/demo/order", { clickId: { a: 1 } }],
+    ]) {
+      const r = await request(f, path, { ...admin, method, body });
+      assert.ok(r.status >= 400 && r.status < 500, `${path} → ${r.status}`);
+    }
+    const bad = await fetch(f.base + "/%E0%A4%A");
+    assert.equal(bad.status, 400);
+  } finally {
+    await f.close();
+  }
+});
+test("Không tạo được chính sách hiệu lực lùi về quá khứ", async () => {
+  const f = await fixture();
+  try {
+    const admin = await login(f, "admin@demo.local");
+    const policy = (effectiveAt) =>
+      request(f, "/admin/policies", {
+        ...admin,
+        method: "POST",
+        body: {
+          shareBps: 9000,
+          holdDays: 0,
+          minimumWithdrawal: 1000,
+          effectiveAt,
+        },
+      });
+    assert.equal((await policy("2020-01-01T00:00:00.000Z")).status, 400);
+    assert.equal((await policy(new Date().toISOString())).status, 200);
+    const later = new Date(Date.now() + 86400000).toISOString();
+    assert.equal((await policy(later)).status, 200);
+  } finally {
+    await f.close();
+  }
+});

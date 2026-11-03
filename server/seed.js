@@ -7,7 +7,7 @@ import {
   requestWithdrawal,
 } from "./finance.js";
 export const DEMO_PASSWORD = "Demo@123456";
-export function seed(db) {
+export function seed(db, { adminPassword = DEMO_PASSWORD } = {}) {
   if (db.prepare("SELECT 1 FROM users LIMIT 1").get()) return false;
   const at = now(),
     userId = id(),
@@ -24,7 +24,7 @@ export function seed(db) {
         uid,
         email,
         name,
-        passwordHash(DEMO_PASSWORD),
+        passwordHash(role === "admin" ? adminPassword : DEMO_PASSWORD),
         role,
         "active",
         "Ngân hàng mô phỏng",

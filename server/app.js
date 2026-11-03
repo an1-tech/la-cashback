@@ -10,6 +10,10 @@ import {
   isoDate,
   shopeeUrl,
   rateLimit,
+  rateCheck,
+  rateHit,
+  rateClear,
+  idInput,
   token,
   hash,
   passwordHash,
@@ -46,10 +50,16 @@ const mime = {
   ".css": "text/css; charset=utf-8",
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
+  ".png": "image/png",
+  ".webp": "image/webp",
 };
 export function createApp(
   db,
-  { secureCookie = false, staticDir = resolve("dist") } = {},
+  {
+    secureCookie = false,
+    publicDemo = false,
+    staticDir = resolve("dist"),
+  } = {},
 ) {
   return createServer(async (req, res) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
@@ -69,13 +79,24 @@ export function createApp(
     try {
       const url = new URL(req.url, "http://localhost");
       const path = url.pathname;
+      if (req.method === "GET" && path === "/healthz") {
+        db.prepare("SELECT 1").get();
+        send({ ok: true, mode: "demo" });
+        return;
+      }
       if (!path.startsWith("/api/")) {
         ensure(
           req.method === "GET" || req.method === "HEAD",
           "Không hỗ trợ phương thức.",
           405,
         );
-        let file = resolve(staticDir, "." + decodeURIComponent(path));
+        let decoded;
+        try {
+          decoded = decodeURIComponent(path);
+        } catch {
+          throw new AppError("Đường dẫn không hợp lệ.", 400);
+        }
+        let file = resolve(staticDir, "." + decoded);
         ensure(
           file === staticDir || file.startsWith(staticDir + sep),
           "Đường dẫn không hợp lệ.",
@@ -213,6 +234,7 @@ export function createApp(
           : [];
         send({
           demo: true,
+          publicDemo,
           provider: "demo",
           user: safeUser(user),
           csrf: user?.csrf || null,
@@ -242,10 +264,10 @@ export function createApp(
         rateLimit(db, `auth:ip:${ip}`, 25, 900);
         const email = textInput(body.email, "Email", 254).toLowerCase();
         ensure(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), "Email không hợp lệ.");
-        rateLimit(db, `auth:email:${email}`, 10, 900);
         const password = textInput(body.password, "Mật khẩu", 128, 10);
         let found = db.prepare("SELECT * FROM users WHERE email=?").get(email);
         if (path.endsWith("/register")) {
+          rateLimit(db, `auth:email:${email}`, 10, 900);
           ensure(!found, "Email đã được sử dụng.");
           const uid = id();
           db.prepare(
@@ -259,14 +281,22 @@ export function createApp(
           );
           found = db.prepare("SELECT * FROM users WHERE id=?").get(uid);
         } else {
+          // Chỉ đếm lần sai theo email + IP: người khác đoán sai không khóa được chủ tài khoản.
+          const failKey = `auth:fail:${email}:${ip}`;
+          rateCheck(db, failKey, 10);
           const fallback =
             "00000000000000000000000000000000:" + "00".repeat(64);
-          ensure(
-            passwordMatches(password, found?.password_hash || fallback) &&
-              found?.status === "active",
-            "Email hoặc mật khẩu không đúng, hoặc tài khoản đang bị khóa.",
-            401,
-          );
+          if (
+            !passwordMatches(password, found?.password_hash || fallback) ||
+            found?.status !== "active"
+          ) {
+            rateHit(db, failKey, 900);
+            throw new AppError(
+              "Email hoặc mật khẩu không đúng, hoặc tài khoản đang bị khóa.",
+              401,
+            );
+          }
+          rateClear(db, failKey);
         }
         send({ user: safeUser(found), csrf: beginSession(found.id) });
         return;
@@ -283,6 +313,11 @@ export function createApp(
         return;
       }
       if (method === "POST" && path === "/api/auth/forgot") {
+        ensure(
+          !publicDemo,
+          "Bản demo online chưa hỗ trợ gửi email đặt lại mật khẩu. Hãy dùng tài khoản thử nghiệm hoặc liên hệ chủ đề án.",
+          503,
+        );
         rateLimit(db, `reset:${ip}`, 5, 900);
         const email = textInput(body.email, "Email", 254).toLowerCase();
         const u = db.prepare("SELECT * FROM users WHERE email=?").get(email);
@@ -303,6 +338,11 @@ export function createApp(
         return;
       }
       if (method === "POST" && path === "/api/auth/reset") {
+        ensure(
+          !publicDemo,
+          "Đặt lại mật khẩu demo chỉ dùng ở môi trường cục bộ.",
+          503,
+        );
         rateLimit(db, `reset-use:${ip}`, 10, 900);
         const t = textInput(body.token, "Mã đặt lại", 100);
         const pw = textInput(body.password, "Mật khẩu mới", 128, 10);
@@ -366,7 +406,7 @@ export function createApp(
         rateLimit(db, `demo:${user.id}`, 20, 60);
         const click = db
           .prepare("SELECT * FROM clicks WHERE id=? AND user_id=?")
-          .get(body.clickId, user.id);
+          .get(idInput(body.clickId, "Mã lượt bấm"), user.id);
         ensure(click, "Không tìm thấy lượt bấm của bạn.", 404);
         const externalId = `DEMO-${click.id}`;
         const result = ingestReport(
@@ -514,9 +554,10 @@ export function createApp(
         rateLimit(db, `ticket:${user.id}`, 10, 3600);
         if (body.orderId)
           ensure(
-            db
-              .prepare("SELECT 1 FROM orders WHERE id=? AND user_id=?")
-              .get(body.orderId, user.id),
+            typeof body.orderId === "string" &&
+              db
+                .prepare("SELECT 1 FROM orders WHERE id=? AND user_id=?")
+                .get(body.orderId, user.id),
             "Không tìm thấy đơn của bạn.",
             404,
           );
@@ -657,7 +698,7 @@ export function createApp(
         if (method === "POST" && path === "/api/admin/reconcile") {
           const order = db
             .prepare("SELECT * FROM orders WHERE id=?")
-            .get(body.orderId);
+            .get(idInput(body.orderId, "Mã đơn"));
           ensure(order, "Không tìm thấy đơn.", 404);
           const eventId = textInput(body.eventId, "Mã sự kiện", 100, 8);
           ensure(
@@ -714,6 +755,7 @@ export function createApp(
           return;
         }
         if (method === "PATCH" && path === "/api/admin/users") {
+          idInput(body.id, "Mã người dùng");
           ensure(
             body.id !== user.id,
             "Không thể tự khóa tài khoản quản trị hiện tại.",
@@ -742,7 +784,9 @@ export function createApp(
           return;
         }
         if (method === "POST" && path === "/api/admin/tickets") {
-          const t = db.prepare("SELECT * FROM tickets WHERE id=?").get(body.id);
+          const t = db
+            .prepare("SELECT * FROM tickets WHERE id=?")
+            .get(idInput(body.id, "Mã yêu cầu"));
           ensure(t, "Không tìm thấy yêu cầu.", 404);
           const response = textInput(body.response, "Phản hồi", 2000, 5);
           transaction(db, () => {
@@ -771,7 +815,7 @@ export function createApp(
           return;
         }
         if (method === "POST" && path === "/api/admin/deals") {
-          const dealId = body.id || id();
+          const dealId = body.id ? idInput(body.id, "Mã ưu đãi") : id();
           const values = [
             textInput(body.title, "Tiêu đề", 150, 3),
             textInput(body.category, "Danh mục", 50),
@@ -798,6 +842,9 @@ export function createApp(
       throw new AppError("Không tìm thấy chức năng.", 404);
     } catch (error) {
       if (error.status) send({ error: error.message }, error.status);
+      else if (error.code === "ERR_INVALID_ARG_TYPE")
+        // Giá trị JSON sai kiểu (object, mảng...) không bind được vào SQLite.
+        send({ error: "Dữ liệu gửi lên không đúng định dạng." }, 400);
       else if (String(error.code).startsWith("ERR_SQLITE"))
         send(
           {

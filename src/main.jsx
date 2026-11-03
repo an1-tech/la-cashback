@@ -572,7 +572,9 @@ function LinkBox({ initialUrl = "" }) {
   };
   return (
     <div className="link-box">
-      <label className="link-visible-label" htmlFor={inputId}>Dán link sản phẩm Shopee</label>
+      <label className="link-visible-label" htmlFor={inputId}>
+        Dán link sản phẩm Shopee
+      </label>
       <form onSubmit={check}>
         <div className="link-input">
           <Icon name="link" size={20} />
@@ -1353,7 +1355,7 @@ function TicketList() {
   );
 }
 function Auth() {
-  const { setModal, refresh, setToast } = useApp();
+  const { boot, setModal, refresh, setToast } = useApp();
   const [mode, setMode] = useState("login"),
     [resetToken, setResetToken] = useState("");
   const [demo, setDemo] = useState("user");
@@ -1406,8 +1408,10 @@ function Auth() {
             </button>
           </div>
           <p>
-            {demo === "admin" ? "admin" : "ban"}@demo.local · Mật khẩu:
-            Demo@123456
+            {boot.publicDemo && demo === "admin"
+              ? "Mật khẩu quản trị do chủ đề án cung cấp riêng."
+              : (demo === "admin" ? "admin" : "ban") +
+                "@demo.local · Mật khẩu: Demo@123456"}
           </p>
         </div>
       )}
@@ -1453,7 +1457,11 @@ function Auth() {
             autoComplete={
               mode === "register" ? "new-password" : "current-password"
             }
-            defaultValue={mode === "login" ? "Demo@123456" : ""}
+            defaultValue={
+              mode === "login" && !(boot.publicDemo && demo === "admin")
+                ? "Demo@123456"
+                : ""
+            }
             required
             minLength={10}
             maxLength={128}
@@ -1461,6 +1469,12 @@ function Auth() {
         </Form>
       ) : (
         <>
+          {boot.publicDemo && (
+            <p className="alert">
+              Bản demo online chưa có dịch vụ email. Bạn có thể đăng ký tài
+              khoản thử mới; không nhập thông tin thật.
+            </p>
+          )}
           <Form
             submitLabel="Tạo mã đặt lại demo"
             onSubmit={async (v) => {
@@ -1514,7 +1528,7 @@ function Auth() {
         </>
       )}
       <p className="microcopy">
-        <Icon name="shield" size={13} /> Bản demo cục bộ. Chỉ sử dụng thông tin
+        <Icon name="shield" size={13} /> Bản demo học tập. Chỉ sử dụng thông tin
         thử nghiệm.
       </p>
     </Modal>

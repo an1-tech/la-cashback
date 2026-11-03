@@ -1576,6 +1576,11 @@ td {
   max-width: 280px;
   overflow-wrap: anywhere;
 }
+td.email,
+td .email {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
 td small {
   display: block;
   color: var(--muted);

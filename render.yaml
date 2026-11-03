@@ -1,0 +1,22 @@
+# Demo học tập miễn phí. Dữ liệu SQLite không bền vững trên gói Free.
+services:
+  - type: web
+    name: la-cashback-demo
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_MODE
+        value: "true"
+      - key: PUBLIC_DEMO
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: DATABASE_PATH
+        value: /app/data/cashback.sqlite
+      - key: DEMO_ADMIN_PASSWORD
+        generateValue: true

@@ -38,6 +38,17 @@ export function textInput(value, label, max = 500, min = 1) {
   );
   return value.trim();
 }
+export function idInput(value, label = "Mã") {
+  ensure(
+    typeof value === "string" && value.length >= 1 && value.length <= 100,
+    `${label} không hợp lệ.`,
+  );
+  return value;
+}
+export function optionalText(value, label, max = 500) {
+  if (value === undefined || value === null || value === "") return "";
+  return textInput(value, label, max);
+}
 export function integer(value, label, min = 0, max = 1_000_000_000_000) {
   ensure(
     Number.isSafeInteger(value) && value >= min && value <= max,
@@ -81,21 +92,27 @@ export function shopeeUrl(value) {
   url.hash = "";
   return url.toString();
 }
-export function rateLimit(db, key, limit, seconds) {
-  const time = Date.now();
+export function rateCheck(db, key, limit) {
   const row = db.prepare("SELECT * FROM rate_limits WHERE key=?").get(key);
-  if (row && row.expires_at > time) {
-    ensure(
-      row.count < limit,
-      "Bạn thao tác quá nhanh. Vui lòng thử lại sau.",
-      429,
-    );
-    db.prepare("UPDATE rate_limits SET count=count+1 WHERE key=?").run(key);
-  } else
-    db.prepare(
-      "INSERT INTO rate_limits VALUES (?,?,?) ON CONFLICT(key) DO UPDATE SET count=excluded.count, expires_at=excluded.expires_at",
-    ).run(key, 1, time + seconds * 1000);
+  ensure(
+    !row || row.expires_at <= Date.now() || row.count < limit,
+    "Bạn thao tác quá nhanh. Vui lòng thử lại sau.",
+    429,
+  );
+}
+export function rateHit(db, key, seconds) {
+  const time = Date.now();
+  db.prepare(
+    "INSERT INTO rate_limits VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN expires_at>? THEN count+1 ELSE 1 END, expires_at=CASE WHEN expires_at>? THEN expires_at ELSE excluded.expires_at END",
+  ).run(key, time + seconds * 1000, time, time);
   db.prepare("DELETE FROM rate_limits WHERE expires_at < ?").run(
     time - 86400000,
   );
+}
+export function rateClear(db, key) {
+  db.prepare("DELETE FROM rate_limits WHERE key=?").run(key);
+}
+export function rateLimit(db, key, limit, seconds) {
+  rateCheck(db, key, limit);
+  rateHit(db, key, seconds);
 }
