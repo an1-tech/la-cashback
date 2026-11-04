@@ -225,26 +225,6 @@ function App() {
               <Icon name="help" />
               Trung tâm hỗ trợ
             </button>
-            <div className="theme-control">
-              <span>
-                <Icon name={theme === "dark" ? "moon" : "sun"} size={17} />
-                {theme === "dark" ? "Chế độ tối" : "Chế độ sáng"}
-              </span>
-              <button
-                aria-label="Đổi chế độ sáng tối"
-                role="switch"
-                aria-checked={theme === "dark"}
-                className={"switch " + theme}
-                onClick={() =>
-                  setTheme((v) => (v === "dark" ? "light" : "dark"))
-                }
-              >
-                <span />
-              </button>
-            </div>
-            <div className="sidebar-foot">
-              © 2026 Lá Cashback <span>v1.0 demo</span>
-            </div>
           </div>
         </aside>
         <div className="workspace">
@@ -257,8 +237,15 @@ function App() {
             </a>
             <div className="top-actions">
               <button
-                className="icon-button mobile-theme"
+                className="icon-button header-theme"
                 aria-label="Đổi chế độ sáng tối"
+                role="switch"
+                aria-checked={theme === "dark"}
+                title={
+                  theme === "dark"
+                    ? "Chuyển sang chế độ sáng"
+                    : "Chuyển sang chế độ tối"
+                }
                 onClick={() =>
                   setTheme((v) => (v === "dark" ? "light" : "dark"))
                 }
@@ -386,8 +373,7 @@ function App() {
             )}
             <footer className="main-footer">
               <span>
-                <Icon name="leaf" size={15} /> Mua sắm có kế hoạch. Hoàn tiền
-                minh bạch.
+                <Icon name="leaf" size={15} /> © 2026 Lá Cashback · v1.0 demo
               </span>
               <button onClick={() => setModal("guide")}>
                 Cách tính tiền hoàn <Icon name="external" size={13} />

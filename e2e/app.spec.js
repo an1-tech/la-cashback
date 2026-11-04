@@ -64,11 +64,11 @@ test("Điện thoại 390px: điều hướng, lọc ưu đãi, lưu deal và kh
     ),
   ).toBe(true);
   await page
-    .getByRole("button", { name: "Đổi chế độ sáng tối", exact: true })
+    .getByRole("switch", { name: "Đổi chế độ sáng tối", exact: true })
     .click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page
-    .getByRole("button", { name: "Đổi chế độ sáng tối", exact: true })
+    .getByRole("switch", { name: "Đổi chế độ sáng tối", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Đăng nhập", exact: true })

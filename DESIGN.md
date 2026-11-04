@@ -6,6 +6,8 @@ Reuse existing React components, API workflows, light/dark tokens and navigation
 
 Brand requirements override generic style rules: forest-tinted dark surfaces, lime action, botanical leaf, large two-line shopping heading. Use visible focus, 44px primary touch targets and reduced-motion support. No animation library is needed for this screen.
 
+Theme switching lives in the topbar next to the notifications and avatar at all widths. Copyright and demo version belong to the page footer after its content, never in the sidebar.
+
 ## Community and wide-screen extension
 
 Match the functional categories visible in the user's Monback screenshots, without importing their artwork, copy, red palette, or narrow mobile-width desktop column. Keep Lá's existing components and colors. No React Bits or GSAP needed for these data screens.
