@@ -333,3 +333,25 @@
     min-width: 0;
   }
 }
+
+/* Màn hình rất hẹp (320–380px): thanh trên cùng vừa khít với mọi bộ font hệ thống. */
+@media (max-width: 380px) {
+  .topbar {
+    gap: 8px;
+    padding-inline: 12px;
+  }
+  .mobile-brand {
+    min-width: 0;
+    flex-shrink: 1;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .top-actions {
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .topbar .button.compact {
+    padding-inline: 10px;
+    font-size: 12px;
+  }
+}
