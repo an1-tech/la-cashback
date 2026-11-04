@@ -51,3 +51,32 @@ jobs:
           name: playwright-artifacts
           path: artifacts/playwright
           retention-days: 7
+
+  docker:
+    name: Docker smoke test
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Build image dùng trên Render
+        run: docker build --tag la-cashback:ci .
+      - name: Khởi động container ở chế độ demo công khai
+        run: |
+          export DEMO_ADMIN_PASSWORD="$(openssl rand -hex 24)"
+          echo "::add-mask::$DEMO_ADMIN_PASSWORD"
+          docker run --detach --name la-cashback-ci \
+            --publish 127.0.0.1:3082:3080 \
+            --env PUBLIC_DEMO=true --env COOKIE_SECURE=true \
+            --env DEMO_ADMIN_PASSWORD la-cashback:ci
+      - name: Kiểm tra HTTP, dữ liệu và tài sản trong container
+        run: node scripts/smoke-container.mjs http://127.0.0.1:3082
+      - name: Log container khi lỗi
+        if: failure()
+        run: docker logs la-cashback-ci
+      - name: Dừng container
+        if: always()
+        run: docker rm --force la-cashback-ci

@@ -746,6 +746,26 @@ test("Đơn quản trị: phân trang, tìm phía server, CSV đủ dữ liệu 
     assert.equal(first.data.rows.length, 50);
     const second = await request(f, "/admin/orders?page=2", admin);
     assert.equal(second.data.rows.length, 14);
+    const beyond = await request(f, "/admin/orders?page=999", admin);
+    assert.equal(beyond.data.page, 2);
+    assert.deepEqual(
+      beyond.data.rows.map((o) => o.id),
+      second.data.rows.map((o) => o.id),
+    );
+    const empty = await request(
+      f,
+      "/admin/orders?page=999&q=NO-SUCH-ORDER",
+      admin,
+    );
+    assert.equal(empty.data.page, 1);
+    assert.equal(empty.data.total, 0);
+    assert.deepEqual(empty.data.rows, []);
+    for (const value of ["1.1", "Infinity", "-1", "abc"]) {
+      assert.equal(
+        (await request(f, "/admin/orders?page=" + value, admin)).status,
+        400,
+      );
+    }
     const found = await request(f, "/admin/orders?q=PAGE-59", admin);
     assert.equal(found.data.total, 1);
     assert.equal(

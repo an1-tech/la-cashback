@@ -18,13 +18,7 @@ const steps = [
 // Kịch bản ví dụ cố định; tỷ lệ chia, thời gian chờ và mức rút lấy từ chính sách hiện hành.
 const exampleOrder = 450000,
   exampleCommission = 25000;
-const samplePolicy = {
-  share_bps: 7000,
-  hold_days: 0,
-  minimum_withdrawal: 50000,
-};
-
-function faqFor(policy) {
+function faqFor(policy, unavailable) {
   return [
     [
       "Lá có phải Shopee không?",
@@ -32,10 +26,14 @@ function faqFor(policy) {
     ],
     [
       "Khi nào tiền hoàn được rút?",
-      (policy.hold_days
-        ? `Sau khi quản trị viên duyệt hoa hồng, khoản hoàn chờ thêm ${policy.hold_days} ngày rồi chuyển sang Có thể rút.`
-        : "Sau khi quản trị viên duyệt hoa hồng, khoản hoàn chuyển ngay sang Có thể rút.") +
-        ` Mức rút tối thiểu hiện là ${money(policy.minimum_withdrawal)}.`,
+      policy
+        ? (policy.hold_days
+            ? `Sau khi quản trị viên duyệt hoa hồng, khoản hoàn chờ thêm ${policy.hold_days} ngày rồi chuyển sang Có thể rút.`
+            : "Sau khi quản trị viên duyệt hoa hồng, khoản hoàn chuyển ngay sang Có thể rút.") +
+          ` Mức rút tối thiểu hiện là ${money(policy.minimum_withdrawal)}.`
+        : unavailable
+          ? "Chưa tải được chính sách rút tiền. Vui lòng thử lại để xem mức rút tối thiểu và thời gian chờ đang áp dụng."
+          : "Đang tải mức rút tối thiểu và thời gian chờ đang áp dụng.",
     ],
     [
       "Có dùng tiền thật không?",
@@ -47,20 +45,35 @@ function faqFor(policy) {
 export function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [policy, setPolicy] = useState(null);
+  const [policyState, setPolicyState] = useState("loading");
+  const loadPolicy = async () => {
+    setPolicyState("loading");
+    try {
+      const data = await api("/bootstrap");
+      if (!data.policy) throw new Error("Chưa có chính sách");
+      setPolicy(data.policy);
+      setPolicyState("ready");
+    } catch {
+      setPolicy(null);
+      setPolicyState("error");
+    }
+  };
   useEffect(() => {
-    api("/bootstrap")
-      .then((data) => setPolicy(data.policy))
-      .catch(() => {});
+    loadPolicy();
   }, []);
-  const p = policy || samplePolicy;
   // Cùng công thức với máy chủ: làm tròn xuống đến 1 đồng.
-  const cashback = Math.floor((exampleCommission * p.share_bps) / 10000);
+  const cashback = policy
+    ? Math.floor((exampleCommission * policy.share_bps) / 10000)
+    : null;
   const example = [
     ["Giá trị đơn", money(exampleOrder)],
     ["Hoa hồng nguồn báo về", money(exampleCommission)],
-    ["Lá chia cho bạn", p.share_bps / 100 + "%"],
+    [
+      "Lá chia cho bạn",
+      policy ? policy.share_bps / 100 + "%" : "Chưa xác định",
+    ],
   ];
-  const faq = faqFor(p);
+  const faq = faqFor(policy, policyState === "error");
   return (
     <div className="landing" id="landing-top">
       <header className="landing-header landing-wrap">
@@ -170,10 +183,27 @@ export function Landing() {
             <div>
               <h2 id="landing-example-title">Một đơn, tính rõ từng đồng</h2>
               <p>
-                Ví dụ với một đơn mô phỏng, theo chính sách đang áp dụng. Tiền
-                hoàn tính trên hoa hồng hợp lệ, không phải giá sản phẩm, làm
-                tròn xuống đến 1 đồng.
+                Ví dụ với một đơn mô phỏng. Tiền hoàn tính trên hoa hồng hợp lệ,
+                không phải giá sản phẩm, làm tròn xuống đến 1 đồng.
               </p>
+              {policyState !== "ready" && (
+                <div role="status" aria-live="polite">
+                  <p>
+                    {policyState === "loading"
+                      ? "Đang tải chính sách hoàn tiền"
+                      : "Chưa tải được chính sách hoàn tiền"}
+                  </p>
+                  {policyState === "error" && (
+                    <button
+                      type="button"
+                      className="landing-button"
+                      onClick={loadPolicy}
+                    >
+                      Thử tải lại chính sách
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
             <dl className="landing-calc">
               {example.map(([label, value]) => (
@@ -184,7 +214,7 @@ export function Landing() {
               ))}
               <div className="landing-calc-total">
                 <dt>Bạn nhận lại</dt>
-                <dd>{money(cashback)}</dd>
+                <dd>{cashback === null ? "Chưa xác định" : money(cashback)}</dd>
               </div>
             </dl>
           </div>

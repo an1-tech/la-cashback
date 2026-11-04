@@ -4,6 +4,7 @@ services:
     name: la-cashback-demo
     runtime: docker
     plan: free
+    autoDeployTrigger: checksPass
     healthCheckPath: /healthz
     envVars:
       - key: HOST

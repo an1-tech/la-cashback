@@ -192,6 +192,10 @@ function Reconcile({ data }) {
   }, [query]);
   const filter = `status=${status}&q=${encodeURIComponent(search)}`;
   const list = useData(`/admin/orders?${filter}&page=${page}`, version);
+  // API trả về trang còn tồn tại sau khi số đơn trong bộ lọc thay đổi.
+  useEffect(() => {
+    if (list.data) setPage(list.data.page);
+  }, [list.data]);
   const event = useRef(crypto.randomUUID());
   const click = data.clicks[0];
   const changed =
