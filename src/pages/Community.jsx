@@ -141,7 +141,7 @@ export function Feed() {
       </div>
       <aside className="community-aside panel">
         <Icon name="leaf" size={38} />
-        <h2>Chuyện mua sắm, kể thật rõ.</h2>
+        <h2>Chuyện mua sắm, kể thật rõ</h2>
         <p>
           Bản tin chính thức của Lá. Hướng dẫn ngắn, thông tin rõ và những cập
           nhật bạn cần.
@@ -367,7 +367,7 @@ export function MemberPage({ section }) {
             {section === "checkin" && (
               <>
                 <Icon name="leaf" size={52} />
-                <h2>Một ngày, một mầm xanh.</h2>
+                <h2>Một ngày, một mầm xanh</h2>
                 <p>
                   Điểm danh nhận 10 điểm trải nghiệm mỗi ngày, theo giờ Việt Nam
                   (UTC+7).

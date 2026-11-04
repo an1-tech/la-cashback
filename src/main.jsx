@@ -212,7 +212,7 @@ function App() {
               <strong>
                 Mỗi lần mua,
                 <br />
-                thêm một chút vui.
+                thêm một chút vui
               </strong>
               <p>Bắt đầu từ món đồ bạn cần.</p>
               <button className="text-button" onClick={() => setModal("guide")}>
@@ -289,7 +289,7 @@ function App() {
           <main className="main-content">
             <div className="demo-notice">
               <Icon name="info" size={15} />
-              <span>Bản demo · Đơn hàng và thanh toán mô phỏng.</span>
+              <span>Bản demo · Đơn hàng và thanh toán mô phỏng</span>
               <button onClick={() => setModal("guide")}>
                 Tìm hiểu <Icon name="arrow" size={13} />
               </button>
@@ -1753,9 +1753,9 @@ function DemoShop() {
     <section className="panel demo-shop">
       <span className="hero-label">CỬA HÀNG MÔ PHỎNG · KHÔNG PHẢI SHOPEE</span>
       <h1>
-        Thử một lần mua.
+        Thử một lần mua
         <br />
-        Hiểu cả hành trình.
+        Hiểu cả hành trình
       </h1>
       <p>Không có hàng hóa được mua hay tiền thật được sử dụng.</p>
       {!boot.user ? (

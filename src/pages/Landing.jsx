@@ -5,12 +5,12 @@ import "./landing.css";
 const steps = [
   [
     "Tạo link theo dõi",
-    "Dán link sản phẩm Shopee vào Lá để tạo link cho lượt mua thử.",
+    "Dán link sản phẩm Shopee vào Lá để tạo link cho lượt mua thử",
   ],
-  ["Mô phỏng mua hàng", "Mở link vừa tạo và đặt đơn mẫu trong cửa hàng demo."],
+  ["Mô phỏng mua hàng", "Mở link vừa tạo và đặt đơn mẫu trong cửa hàng demo"],
   [
     "Theo dõi khoản hoàn",
-    "Xem trạng thái đối soát trong Đơn hàng và số tiền được duyệt trong ví.",
+    "Xem trạng thái đối soát trong Đơn hàng và số tiền được duyệt trong ví",
   ],
 ];
 
@@ -46,12 +46,12 @@ export function Landing() {
               </h1>
               <p>
                 Trải nghiệm cách tạo link mua sắm, theo dõi đơn và nhận hoàn
-                tiền vào ví Lá.
+                tiền vào ví Lá
               </p>
               <a className="landing-button landing-start" href="/app#links">
                 Tạo link dùng thử <Icon name="arrow" size={19} />
               </a>
-              <small>Bản demo. Đơn hàng và thanh toán đều mô phỏng.</small>
+              <small>Bản demo · Đơn hàng và thanh toán đều mô phỏng</small>
             </div>
             <figure className="landing-visual">
               <div
@@ -75,7 +75,7 @@ export function Landing() {
             <h2 id="landing-how-title">Cách Lá ghi nhận hoàn tiền</h2>
             <p>
               Từ link sản phẩm đến số dư trong ví, bạn có thể theo dõi từng
-              bước.
+              bước
             </p>
           </div>
           <ol>
