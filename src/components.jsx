@@ -1,5 +1,33 @@
 import React, { useEffect, useRef, useState } from "react";
 import { api, statusLabels } from "./api";
+import { useApp } from "./context";
+
+export function LogoutButton() {
+  const { mutate, navigate, setToast } = useApp();
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      className="button"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          await mutate("/auth/logout", {});
+          navigate("home");
+          setToast("Đã đăng xuất");
+        } catch (error) {
+          setToast(error.message);
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <Icon name="logout" size={16} />
+      {busy ? "Đang đăng xuất…" : "Đăng xuất"}
+    </button>
+  );
+}
+
 export function Icon({ name, size = 20, ...props }) {
   const paths = {
     feed: (

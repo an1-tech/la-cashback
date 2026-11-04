@@ -12,6 +12,7 @@ import {
   Field,
   Modal,
   DealArt,
+  LogoutButton,
 } from "./components";
 import { Admin } from "./pages/Admin";
 import { Landing } from "./pages/Landing";
@@ -1269,7 +1270,7 @@ function Wallet() {
   );
 }
 function Profile() {
-  const { boot, mutate, setModal, navigate, setToast } = useApp();
+  const { boot, mutate, setModal, navigate } = useApp();
   return (
     <>
       <div className="profile-banner">
@@ -1290,21 +1291,7 @@ function Profile() {
               Mở quản trị <Icon name="arrow" size={16} />
             </button>
           )}
-          <button
-            className="button"
-            onClick={async () => {
-              try {
-                await mutate("/auth/logout", {});
-                navigate("home");
-                setToast("Đã đăng xuất.");
-              } catch (e) {
-                setToast(e.message);
-              }
-            }}
-          >
-            <Icon name="logout" size={16} />
-            Đăng xuất
-          </button>
+          <LogoutButton />
         </div>
       </div>
       <div className="two-column">

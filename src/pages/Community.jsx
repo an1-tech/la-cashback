@@ -1,7 +1,15 @@
 import React, { useState } from "react";
 import { useApp } from "../context";
 import { money, date } from "../api";
-import { Icon, DataState, useData, Form, Field, Empty } from "../components";
+import {
+  Icon,
+  DataState,
+  useData,
+  Form,
+  Field,
+  Empty,
+  LogoutButton,
+} from "../components";
 
 export async function copyText(text, setToast) {
   try {
@@ -667,9 +675,12 @@ export function AccountOverview() {
             </DataState>
           </div>
         </div>
-        <button className="button" onClick={() => navigate("settings")}>
-          Chỉnh sửa hồ sơ <Icon name="arrow" size={16} />
-        </button>
+        <div className="account-actions">
+          <button className="button" onClick={() => navigate("settings")}>
+            Chỉnh sửa hồ sơ <Icon name="arrow" size={16} />
+          </button>
+          <LogoutButton />
+        </div>
       </div>
       <section className="profile-money">
         <div>

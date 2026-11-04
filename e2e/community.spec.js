@@ -118,3 +118,37 @@ test("Community flows and wide-screen/mobile layouts", async ({ page }) => {
   });
   expect(errors).toEqual([]);
 });
+
+test("Logout is visible in the account overview and ends the session", async ({
+  page,
+}) => {
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/app");
+    await page
+      .getByRole("button", { name: "Đăng nhập", exact: true })
+      .first()
+      .click();
+    await page.getByRole("dialog").locator('button[type="submit"]').click();
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await page.getByRole("button", { name: "Mở tài khoản" }).click();
+    const logout = page.getByRole("button", { name: "Đăng xuất", exact: true });
+    await expect(logout).toBeInViewport();
+    await page.screenshot({
+      path: `artifacts/account-logout-${width}.png`,
+      fullPage: true,
+    });
+    await logout.click();
+    await expect(
+      page.getByRole("button", { name: "Mở tài khoản" }),
+    ).toHaveCount(0);
+    await page.reload();
+    expect(
+      (await (await page.request.get("/api/bootstrap")).json()).user,
+    ).toBeNull();
+    await page.goto("/app#profile");
+    await expect(
+      page.getByRole("heading", { name: "Một tài khoản, mọi khoản hoàn" }),
+    ).toBeVisible();
+  }
+});

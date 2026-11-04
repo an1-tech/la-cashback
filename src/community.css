@@ -250,6 +250,11 @@ summary {
   justify-content: space-between;
   margin: 10px 0 28px;
 }
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
 .account-identity {
   min-width: 0;
 }
