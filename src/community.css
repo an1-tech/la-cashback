@@ -15,7 +15,7 @@ body {
   font-size: 12px;
 }
 .app-shell .bottom-nav button span {
-  font-size: 11px;
+  font-size: 12px;
 }
 .home-lower-grid {
   align-items: start;
@@ -608,7 +608,7 @@ progress {
   .quick-actions button {
     padding: 10px 2px;
     border: 0;
-    font-size: 11px;
+    font-size: 12px;
     gap: 8px;
   }
   .quick-actions svg {

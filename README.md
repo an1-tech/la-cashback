@@ -32,7 +32,7 @@ Mở <http://127.0.0.1:5173>. Vite proxy `/api` sang backend cổng 3080. Dừng
 | Quản trị                 | `admin@demo.local` | `Demo@123456` |
 | Người mua chưa có đơn    | `khac@demo.local`  | `Demo@123456` |
 
-Nút **Dùng thử ngay** (trên trang giới thiệu, hoặc trong hộp đăng nhập, hoặc mở `/app#try`) tạo một người mua sandbox riêng `khach-xxxxxxxx@demo.local` kèm đơn, ví và lịch sử rút mẫu, không cần đăng ký và không đụng dữ liệu của tài khoản chung. Giới hạn 5 sandbox/giờ cho mỗi IP. Đăng nhập có nút chọn Người mua / Quản trị để điền nhanh tài khoản thử. Cũng có thể đăng ký tài khoản mới bằng email giả. Ngân hàng duy nhất là “Ngân hàng mô phỏng”; tài khoản phải theo mẫu `DEMO-00001234`. Không nhập dữ liệu thật. Mật khẩu mẫu là thông tin công khai phục vụ demo.
+Nút **Dùng thử ngay** (trên trang giới thiệu, hoặc trong hộp đăng nhập, hoặc mở `/app#try`) tạo một người mua sandbox riêng `khach-xxxxxxxx@demo.local` kèm đơn, ví và lịch sử rút mẫu, không cần đăng ký và không đụng dữ liệu của tài khoản chung. Giới hạn 5 sandbox/giờ cho mỗi IP. Dữ liệu mẫu tuân theo chính sách hiện hành: nếu mức rút tối thiểu cao hơn số dư mẫu hoặc có thời gian chờ, sandbox không có lịch sử rút; mọi bước tạo nằm trong một transaction nên lỗi không để lại tài khoản dở. Đăng nhập có nút chọn Người mua / Quản trị để điền nhanh tài khoản thử. Cũng có thể đăng ký tài khoản mới bằng email giả. Ngân hàng duy nhất là “Ngân hàng mô phỏng”; tài khoản phải theo mẫu `DEMO-00001234`. Không nhập dữ liệu thật. Mật khẩu mẫu là thông tin công khai phục vụ demo.
 
 ## Thử toàn bộ hành trình
 
@@ -116,7 +116,7 @@ Kiểm thử UI tự khởi động cổng **3081**, DB `:memory:` riêng; khôn
 
 ## Triển khai môi trường thử nghiệm
 
-Chỉ hướng dẫn, **chưa triển khai công khai**. Có thể build ở CI (`npm ci && npm test && npm run build`), chuyển `dist/`, `server/`, `package.json` và cấu hình tới máy có Node.js 24; chạy `node server/index.js` dưới tài khoản riêng với volume dữ liệu bền vững. Backend không cần thư viện npm ngoài Node nếu đã có `dist/`.
+Bản demo công khai đang chạy trên Render Free theo [docs/RENDER.md](docs/RENDER.md); dữ liệu ở đó được tạo lại mỗi khi máy chủ khởi động lại. Để tự triển khai ở nơi khác, có thể build ở CI (`npm ci && npm test && npm run build`), chuyển `dist/`, `server/`, `package.json` và cấu hình tới máy có Node.js 24; chạy `node server/index.js` dưới tài khoản riêng với volume dữ liệu bền vững. Backend không cần thư viện npm ngoài Node nếu đã có `dist/`.
 
 Dockerfile đa giai đoạn đi kèm; chưa chạy Docker trong phiên bàn giao:
 
@@ -133,6 +133,6 @@ DB SQLite WAL dùng cho một máy/volume local; không đặt trên ổ mạng 
 
 Không đọc tên/ảnh/giá sản phẩm thật; không resolve link rút gọn; không tạo affiliate URL; không API/webhook Shopee; không email/SMS/OTP; không chuyển khoản; không cam kết hoa hồng/thời gian ghi nhận. Deal/voucher, ngân hàng, reset token hiển thị trong UI và mọi thanh toán đều là mô phỏng.
 
-MVP giới hạn 500 đơn/500 dòng sổ/200 yêu cầu ở mỗi màn hình, chưa phân trang; chưa có search toàn bộ báo cáo lớn, chống bot chuyên dụng, MFA quản trị, mã hóa ngân hàng thật, dịch vụ thông báo ngoài ứng dụng, giám sát hay kiểm toán an ninh độc lập. Không có điểm danh, nhiệm vụ, cấp bậc, giới thiệu, cộng đồng hoặc đổi quà.
+Bảng đơn của quản trị có phân trang 50 dòng, tìm kiếm phía server và xuất CSV toàn bộ kết quả lọc (ô dạng công thức được chặn). Các màn hình khác vẫn giới hạn 500 đơn/500 dòng sổ/200 yêu cầu và chưa phân trang. Chưa có chống bot chuyên dụng, MFA quản trị, mã hóa ngân hàng thật, dịch vụ thông báo ngoài ứng dụng, giám sát hay kiểm toán an ninh độc lập. Điểm danh, hạng thành viên, giới thiệu, bảng tin và mã quà tặng chỉ là dữ liệu trải nghiệm, không quy đổi tiền; chưa có nhiệm vụ hay đổi quà.
 
 Không có ảnh tham chiếu kèm trong đầu vào, nên giao diện và minh họa SVG được tạo riêng cho “Lá Cashback”. Không tải hình hoặc sao chép logo/tài sản từ website khác.

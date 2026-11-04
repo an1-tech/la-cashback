@@ -159,9 +159,7 @@ function Overview({ data, setTab }) {
           </div>
           <div className="attention-row">
             <span>Đơn chờ duyệt</span>
-            <strong>
-              {data.orders.filter((o) => o.status === "pending").length}
-            </strong>
+            <strong>{data.stats.pendingOrders}</strong>
           </div>
           <button
             className="button primary spaced"
@@ -175,24 +173,27 @@ function Overview({ data, setTab }) {
   );
 }
 function Reconcile({ data }) {
-  const { mutate, setToast } = useApp();
+  const { mutate, setToast, version } = useApp();
   const [selected, setSelected] = useState(null),
     [results, setResults] = useState(null),
     [unmatched, setUnmatched] = useState(null),
     [status, setStatus] = useState(""),
     [query, setQuery] = useState(""),
+    [search, setSearch] = useState(""),
+    [page, setPage] = useState(1),
     [commission, setCommission] = useState("");
+  // Chờ người dùng ngừng gõ rồi mới gọi API tìm kiếm.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(query.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+  const filter = `status=${status}&q=${encodeURIComponent(search)}`;
+  const list = useData(`/admin/orders?${filter}&page=${page}`, version);
   const event = useRef(crypto.randomUUID());
   const click = data.clicks[0];
-  const needle = query.trim().toLowerCase();
-  const orders = data.orders.filter(
-    (o) =>
-      (!status || o.status === status) &&
-      (!needle ||
-        [o.title, o.email, o.external_id].some((v) =>
-          String(v).toLowerCase().includes(needle),
-        )),
-  );
   const changed =
     selected && commission !== "" && Number(commission) !== selected.commission;
   const sample = JSON.stringify(
@@ -224,9 +225,18 @@ function Reconcile({ data }) {
             <button
               key={v}
               className={status === v ? "active" : ""}
-              onClick={() => setStatus(v)}
+              onClick={() => {
+                setStatus(v);
+                setPage(1);
+              }}
             >
-              {t} ({data.orders.filter((o) => !v || o.status === v).length})
+              {t}
+              {list.data &&
+                ` (${
+                  v
+                    ? list.data.counts[v] || 0
+                    : Object.values(list.data.counts).reduce((a, b) => a + b, 0)
+                })`}
             </button>
           ))}
         </div>
@@ -235,74 +245,101 @@ function Reconcile({ data }) {
           <input
             type="search"
             aria-label="Tìm đơn theo tên, email hoặc mã đơn"
-            placeholder="Tìm theo tên, email, mã đơn…"
+            placeholder="Tìm đơn…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
-        <button
+        <a
           className="button compact"
-          disabled={!orders.length}
-          onClick={() => downloadCsv("doi-soat.csv", orders)}
+          href={`/api/admin/orders.csv?${filter}`}
+          download="doi-soat.csv"
         >
           <Icon name="download" size={15} />
           Xuất CSV
-        </button>
+        </a>
       </div>
-      <div className="panel table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Đơn / sản phẩm</th>
-              <th>Người mua</th>
-              <th>Hoa hồng</th>
-              <th>Tiền hoàn</th>
-              <th>Trạng thái</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((o) => (
-              <tr key={o.id}>
-                <td>
-                  <strong>{o.title}</strong>
-                  <small className="mono">
-                    {o.external_id} / {o.item_id}
-                  </small>
-                  <small>Chính sách v{o.version}</small>
-                </td>
-                <td className="email">{o.email}</td>
-                <td>{money(o.commission)}</td>
-                <td>{money(o.cashback)}</td>
-                <td>
-                  <Badge status={o.status} />
-                </td>
-                <td>
-                  <button
-                    className="button compact"
-                    onClick={() => {
-                      event.current = crypto.randomUUID();
-                      setCommission(String(o.commission));
-                      setSelected(o);
-                    }}
-                  >
-                    Đối soát
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!orders.length && (
-          <Empty
-            title={
-              data.orders.length
-                ? "Không có đơn khớp bộ lọc"
-                : "Chưa có đơn để đối soát"
-            }
-          />
+      <DataState state={list}>
+        {({ rows: orders, total, pageSize }) => (
+          <>
+            <div className="panel table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Đơn / sản phẩm</th>
+                    <th>Người mua</th>
+                    <th>Hoa hồng</th>
+                    <th>Tiền hoàn</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((o) => (
+                    <tr key={o.id}>
+                      <td>
+                        <strong>{o.title}</strong>
+                        <small className="mono">
+                          {o.external_id} / {o.item_id}
+                        </small>
+                        <small>Chính sách v{o.version}</small>
+                      </td>
+                      <td className="email">{o.email}</td>
+                      <td>{money(o.commission)}</td>
+                      <td>{money(o.cashback)}</td>
+                      <td>
+                        <Badge status={o.status} />
+                      </td>
+                      <td>
+                        <button
+                          className="button compact"
+                          onClick={() => {
+                            event.current = crypto.randomUUID();
+                            setCommission(String(o.commission));
+                            setSelected(o);
+                          }}
+                        >
+                          Đối soát
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!orders.length && (
+                <Empty
+                  title={
+                    status || search
+                      ? "Không có đơn khớp bộ lọc"
+                      : "Chưa có đơn để đối soát"
+                  }
+                />
+              )}
+            </div>
+            {total > pageSize && (
+              <nav className="pager" aria-label="Phân trang đơn hàng">
+                <button
+                  className="button compact"
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Trang trước
+                </button>
+                <span>
+                  Trang {page}/{Math.ceil(total / pageSize)} · {total} đơn
+                </span>
+                <button
+                  className="button compact"
+                  disabled={page * pageSize >= total}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Trang sau
+                </button>
+              </nav>
+            )}
+          </>
         )}
-      </div>
+      </DataState>
       <div className="two-column section">
         <section className="panel">
           <h2>Nhập báo cáo JSON nội bộ</h2>
@@ -1111,45 +1148,6 @@ function AuditDetails({ json }) {
       ))}
     </dl>
   );
-}
-function downloadCsv(name, orders) {
-  const header = [
-    "Mã đơn",
-    "Sản phẩm",
-    "Người mua",
-    "Giá trị đơn",
-    "Hoa hồng",
-    "Tiền hoàn",
-    "Trạng thái",
-    "Cập nhật",
-  ];
-  const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const rows = orders.map((o) =>
-    [
-      o.external_id,
-      o.title,
-      o.email,
-      o.order_value,
-      o.commission,
-      o.cashback,
-      o.status,
-      o.updated_at,
-    ]
-      .map(cell)
-      .join(","),
-  );
-  // BOM giúp Excel đọc đúng tiếng Việt.
-  const blob = new Blob(
-    ["﻿" + [header.map(cell).join(","), ...rows].join("\n")],
-    {
-      type: "text/csv;charset=utf-8",
-    },
-  );
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = name;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 function localTime(value) {
   const d = value ? new Date(value) : new Date();

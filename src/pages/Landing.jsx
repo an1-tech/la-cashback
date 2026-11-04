@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Icon } from "../components";
+import { api, money } from "../api";
 import "./landing.css";
 
 const steps = [
@@ -14,29 +15,52 @@ const steps = [
   ],
 ];
 
-const example = [
-  ["Giá trị đơn", "450.000 đ"],
-  ["Hoa hồng nguồn báo về", "25.000 đ"],
-  ["Lá chia cho bạn", "70%"],
-];
+// Kịch bản ví dụ cố định; tỷ lệ chia, thời gian chờ và mức rút lấy từ chính sách hiện hành.
+const exampleOrder = 450000,
+  exampleCommission = 25000;
+const samplePolicy = {
+  share_bps: 7000,
+  hold_days: 0,
+  minimum_withdrawal: 50000,
+};
 
-const faq = [
-  [
-    "Lá có phải Shopee không?",
-    "Không. Đây là bản demo học tập, chưa kết nối Shopee. Cửa hàng và đơn hàng đều là mô phỏng.",
-  ],
-  [
-    "Khi nào tiền hoàn được rút?",
-    "Sau khi quản trị viên đối soát và duyệt hoa hồng, khoản hoàn chuyển sang Có thể rút. Mức rút tối thiểu hiện là 50.000 đ.",
-  ],
-  [
-    "Có dùng tiền thật không?",
-    "Không. Ngân hàng, voucher và thanh toán đều là dữ liệu thử nghiệm. Không nhập thông tin thật.",
-  ],
-];
+function faqFor(policy) {
+  return [
+    [
+      "Lá có phải Shopee không?",
+      "Không. Đây là bản demo học tập, chưa kết nối Shopee. Cửa hàng và đơn hàng đều là mô phỏng.",
+    ],
+    [
+      "Khi nào tiền hoàn được rút?",
+      (policy.hold_days
+        ? `Sau khi quản trị viên duyệt hoa hồng, khoản hoàn chờ thêm ${policy.hold_days} ngày rồi chuyển sang Có thể rút.`
+        : "Sau khi quản trị viên duyệt hoa hồng, khoản hoàn chuyển ngay sang Có thể rút.") +
+        ` Mức rút tối thiểu hiện là ${money(policy.minimum_withdrawal)}.`,
+    ],
+    [
+      "Có dùng tiền thật không?",
+      "Không. Ngân hàng, voucher và thanh toán đều là dữ liệu thử nghiệm. Không nhập thông tin thật.",
+    ],
+  ];
+}
 
 export function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [policy, setPolicy] = useState(null);
+  useEffect(() => {
+    api("/bootstrap")
+      .then((data) => setPolicy(data.policy))
+      .catch(() => {});
+  }, []);
+  const p = policy || samplePolicy;
+  // Cùng công thức với máy chủ: làm tròn xuống đến 1 đồng.
+  const cashback = Math.floor((exampleCommission * p.share_bps) / 10000);
+  const example = [
+    ["Giá trị đơn", money(exampleOrder)],
+    ["Hoa hồng nguồn báo về", money(exampleCommission)],
+    ["Lá chia cho bạn", p.share_bps / 100 + "%"],
+  ];
+  const faq = faqFor(p);
   return (
     <div className="landing" id="landing-top">
       <header className="landing-header landing-wrap">
@@ -146,8 +170,9 @@ export function Landing() {
             <div>
               <h2 id="landing-example-title">Một đơn, tính rõ từng đồng</h2>
               <p>
-                Tiền hoàn tính trên hoa hồng hợp lệ, không phải giá sản phẩm.
-                Làm tròn xuống đến 1 đồng.
+                Ví dụ với một đơn mô phỏng, theo chính sách đang áp dụng. Tiền
+                hoàn tính trên hoa hồng hợp lệ, không phải giá sản phẩm, làm
+                tròn xuống đến 1 đồng.
               </p>
             </div>
             <dl className="landing-calc">
@@ -159,7 +184,7 @@ export function Landing() {
               ))}
               <div className="landing-calc-total">
                 <dt>Bạn nhận lại</dt>
-                <dd>17.500 đ</dd>
+                <dd>{money(cashback)}</dd>
               </div>
             </dl>
           </div>

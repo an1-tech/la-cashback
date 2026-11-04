@@ -2,6 +2,8 @@ import { transaction, now } from "./db.js";
 import { passwordHash } from "./security.js";
 import {
   id,
+  balances,
+  currentPolicy,
   ingestReport,
   processWithdrawal,
   requestWithdrawal,
@@ -98,8 +100,8 @@ export function seed(db, { adminPassword = DEMO_PASSWORD } = {}) {
         "Ưu đãi minh họa. Mã không có giá trị sử dụng tại Shopee.",
         deal[5],
       );
+    seedBuyerSamples(db, { userId, actorId: adminId, policyId, at });
   });
-  seedBuyerSamples(db, { userId, actorId: adminId, policyId, at });
   return true;
 }
 
@@ -149,7 +151,12 @@ export function seedBuyerSamples(
       actorId,
     );
   }
-  const w = requestWithdrawal(db, userId, 50000, "seed-withdrawal");
+  // Lịch sử rút mẫu chỉ tạo được khi chính sách hiện hành cho phép:
+  // thời gian chờ > 0 hoặc mức tối thiểu cao thì đơn đã duyệt chưa đủ để rút.
+  const policy = currentPolicy(db);
+  const amount = policy?.minimum_withdrawal;
+  if (!amount || balances(db, userId).available < amount) return;
+  const w = requestWithdrawal(db, userId, amount, "seed-withdrawal");
   processWithdrawal(db, w.id, "approved", "", "", actorId);
   processWithdrawal(
     db,

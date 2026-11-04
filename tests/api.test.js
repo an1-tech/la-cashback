@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { openDb } from "../server/db.js";
+import { openDb, transaction } from "../server/db.js";
 import { seed } from "../server/seed.js";
 import { createApp } from "../server/app.js";
 async function fixture() {
@@ -647,5 +647,124 @@ test("Tệp tĩnh: route lạ trả 404, asset có mã băm cache vĩnh viễn, 
     await new Promise((r) => server.close(r));
     db.close();
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+test("Sandbox theo chính sách hiện hành; lỗi giữa chừng hoàn tác toàn bộ", async () => {
+  const f = await fixture();
+  try {
+    const admin = await login(f, "admin@demo.local");
+    const policy = await request(f, "/admin/policies", {
+      ...admin,
+      method: "POST",
+      body: {
+        shareBps: 7000,
+        holdDays: 1,
+        minimumWithdrawal: 100000,
+        effectiveAt: new Date().toISOString(),
+      },
+    });
+    assert.equal(policy.status, 200);
+    const start = await request(f, "/auth/demo", { method: "POST", body: {} });
+    assert.equal(start.status, 200);
+    const guest = { cookie: start.cookie, csrf: start.data.csrf };
+    assert.equal((await request(f, "/orders", guest)).data.length, 4);
+    const wallet = (await request(f, "/wallet", guest)).data;
+    assert.equal(wallet.balances.locked, 126000);
+    assert.equal(wallet.balances.available, 0);
+    assert.equal(wallet.withdrawals.length, 0);
+    const users = f.db.prepare("SELECT COUNT(*) n FROM users").get().n;
+    assert.throws(() =>
+      transaction(f.db, () => {
+        f.db
+          .prepare(
+            "INSERT INTO users(id,email,name,password_hash,created_at) VALUES (?,?,?,?,?)",
+          )
+          .run(
+            "tx-test",
+            "tx@demo.local",
+            "Tx",
+            "x:y",
+            new Date().toISOString(),
+          );
+        transaction(f.db, () => {
+          throw new Error("lỗi giữa chừng");
+        });
+      }),
+    );
+    assert.equal(f.db.prepare("SELECT COUNT(*) n FROM users").get().n, users);
+  } finally {
+    await f.close();
+  }
+});
+test("Sai mật khẩu xác nhận khác với hết phiên", async () => {
+  const f = await fixture();
+  try {
+    const user = await login(f);
+    const wrong = await request(f, "/bank", {
+      ...user,
+      method: "PUT",
+      body: {
+        password: "Sai-mat-khau-1",
+        label: "Ngân hàng mô phỏng",
+        account: "DEMO-00009999",
+        holder: "NGUOI DUNG DEMO",
+      },
+    });
+    assert.equal(wrong.status, 401);
+    assert.equal(wrong.data.reason, undefined);
+    assert.equal((await request(f, "/wallet", user)).status, 200);
+    const expired = await request(f, "/wallet");
+    assert.equal(expired.status, 401);
+    assert.equal(expired.data.reason, "auth_required");
+  } finally {
+    await f.close();
+  }
+});
+test("Đơn quản trị: phân trang, tìm phía server, CSV đủ dữ liệu và chặn công thức", async () => {
+  const f = await fixture();
+  try {
+    const admin = await login(f, "admin@demo.local");
+    const click = (await request(f, "/admin/overview", admin)).data.clicks[0];
+    const rows = Array.from({ length: 60 }, (_, i) => ({
+      eventId: `page-test-${i}`,
+      externalId: `PAGE-${i}`,
+      itemId: "1",
+      clickId: click.id,
+      title: i === 0 ? "=1+1" : `Đơn phân trang ${i}`,
+      orderValue: 100000,
+      commission: 1000,
+      status: "pending",
+    }));
+    const imported = await request(f, "/admin/reports", {
+      ...admin,
+      method: "POST",
+      body: { rows },
+    });
+    assert.ok(imported.data.results.every((r) => !r.error));
+    const first = await request(f, "/admin/orders?page=1", admin);
+    assert.equal(first.data.total, 64);
+    assert.equal(first.data.rows.length, 50);
+    const second = await request(f, "/admin/orders?page=2", admin);
+    assert.equal(second.data.rows.length, 14);
+    const found = await request(f, "/admin/orders?q=PAGE-59", admin);
+    assert.equal(found.data.total, 1);
+    assert.equal(
+      (await request(f, "/admin/orders?status=approved", admin)).data.total,
+      1,
+    );
+    const csv = await fetch(f.base + "/api/admin/orders.csv", {
+      headers: { Cookie: admin.cookie },
+    });
+    assert.match(csv.headers.get("content-type"), /text\/csv/);
+    const text = await csv.text();
+    assert.equal(text.trim().split("\r\n").length, 65);
+    assert.ok(text.includes(`"'=1+1"`));
+    assert.ok(!text.includes(`"=1+1"`));
+    assert.equal(
+      (await request(f, "/admin/orders", await login(f))).status,
+      403,
+    );
+  } finally {
+    await f.close();
   }
 });

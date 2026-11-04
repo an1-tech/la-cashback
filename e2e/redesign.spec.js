@@ -101,6 +101,17 @@ test("Dùng thử ngay: sandbox riêng, link được giữ qua đăng nhập, m
   await expect(
     page.getByRole("list", { name: "Tiến trình đơn hàng" }).first(),
   ).toBeVisible();
+  await page.goto("/app#profile");
+  await page
+    .getByRole("button", { name: "Phương thức nhận tiền", exact: true })
+    .click();
+  await page.getByLabel("Số tài khoản demo").fill("DEMO-00009999");
+  await page.getByLabel("Mật khẩu hiện tại").fill("Sai-mat-khau-1");
+  await page
+    .getByRole("button", { name: "Xác nhận & lưu ngân hàng demo" })
+    .click();
+  await expect(page.getByText("Mật khẩu xác nhận không đúng.")).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.goto("/khong-ton-tai");
   await expect(
     page.getByRole("heading", { name: "Không tìm thấy trang này" }),

@@ -260,3 +260,76 @@
 .not-found svg {
   color: var(--accent);
 }
+
+/* Phân trang bảng quản trị */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Điện thoại và máy tính bảng: chữ phụ tối thiểu 13px, ô nhập 16px để iOS không tự phóng to. */
+@media (max-width: 900px) {
+  small,
+  .microcopy,
+  .muted,
+  .link-hint,
+  .demo-notice,
+  .field > span,
+  .alert,
+  .empty p,
+  .detail-grid small,
+  .order-main small,
+  .order-money small,
+  .order-timeline small,
+  .balance-card > div,
+  .balance-card small,
+  .wallet-summary span,
+  .discovery-card small,
+  .journey-strip,
+  .help-strip p,
+  .bank-card p,
+  .date-filters label,
+  .tabs button,
+  .text-button,
+  .button.compact,
+  .section-heading .text-button,
+  .quick-actions button,
+  th,
+  td {
+    font-size: 13px;
+  }
+  .badge,
+  .nav-tag,
+  .demo-pill,
+  .eyebrow,
+  .hero-label,
+  .mono,
+  code {
+    font-size: 12px;
+  }
+  input,
+  select,
+  textarea,
+  .link-input input {
+    font-size: 16px;
+  }
+}
+
+/* Ô lọc ngày không đẩy trang tràn ngang trên màn hình hẹp. */
+@media (max-width: 760px) {
+  .date-filters {
+    flex-wrap: wrap;
+  }
+  .date-filters label {
+    flex: 1 1 130px;
+    min-width: 0;
+  }
+  .date-filters input {
+    min-width: 0;
+  }
+}

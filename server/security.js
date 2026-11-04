@@ -21,9 +21,11 @@ export function passwordMatches(value, stored) {
   }
 }
 export class AppError extends Error {
-  constructor(message, status = 400) {
+  // `reason` là mã máy đọc được, giúp client phân biệt các lỗi cùng mã HTTP.
+  constructor(message, status = 400, reason) {
     super(message);
     this.status = status;
+    this.reason = reason;
   }
 }
 export function ensure(value, message, status = 400) {

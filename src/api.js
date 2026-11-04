@@ -14,7 +14,8 @@ export async function api(path, { method = "GET", body } = {}) {
   });
   const result = await response.json();
   // Phiên hết hạn hoặc máy chủ demo vừa tạo lại dữ liệu: báo cho App để đăng xuất giao diện.
-  if (response.status === 401 && !path.startsWith("/auth/"))
+  // Các 401 khác, như sai mật khẩu xác nhận ngân hàng, chỉ hiện lỗi tại form.
+  if (response.status === 401 && result.reason === "auth_required")
     window.dispatchEvent(new Event("la:unauthorized"));
   if (!response.ok)
     throw new Error(result.error || "Không thể kết nối. Vui lòng thử lại.");

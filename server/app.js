@@ -59,6 +59,40 @@ const mime = {
   ".webmanifest": "application/manifest+json; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
 };
+// Ô bắt đầu bằng = + - @ (hoặc tab/CR) bị Excel hiểu là công thức: thêm ' để giữ dạng chữ.
+export function csvCell(value) {
+  let text = String(value ?? "");
+  if (typeof value === "string" && /^[=+\-@\t\r]/.test(text)) text = "'" + text;
+  return `"${text.replace(/"/g, '""')}"`;
+}
+function ordersCsv(rows) {
+  const header = [
+    "Mã đơn",
+    "Sản phẩm",
+    "Người mua",
+    "Giá trị đơn",
+    "Hoa hồng",
+    "Tiền hoàn",
+    "Trạng thái",
+    "Cập nhật",
+  ];
+  const lines = rows.map((o) =>
+    [
+      o.external_id,
+      o.title,
+      o.email,
+      o.order_value,
+      o.commission,
+      o.cashback,
+      o.status,
+      o.updated_at,
+    ]
+      .map(csvCell)
+      .join(","),
+  );
+  // BOM giúp Excel đọc đúng tiếng Việt.
+  return "﻿" + [header.map(csvCell).join(","), ...lines].join("\r\n");
+}
 // Đường dẫn SPA hợp lệ; đường dẫn khác vẫn nhận index.html nhưng với mã 404.
 const appRoutes = new Set(["/", "/app", "/demo-shop", "/index.html"]);
 export function createApp(
@@ -196,7 +230,13 @@ export function createApp(
         : null;
       const user = session?.status === "active" ? session : null;
       const needUser = () => {
-        ensure(user, "Vui lòng đăng nhập để tiếp tục.", 401);
+        // Chỉ lỗi này mới nghĩa là hết phiên; 401 khác (sai mật khẩu xác nhận) không đăng xuất giao diện.
+        if (!user)
+          throw new AppError(
+            "Vui lòng đăng nhập để tiếp tục.",
+            401,
+            "auth_required",
+          );
         return user;
       };
       const needAdmin = () => {
@@ -355,25 +395,28 @@ export function createApp(
         const uid = id(),
           tag = uid.slice(0, 8),
           at = now();
-        db.prepare("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?,?,?)").run(
-          uid,
-          `khach-${tag}@demo.local`,
-          "Khách trải nghiệm",
-          passwordHash(token()),
-          "user",
-          "active",
-          "Ngân hàng mô phỏng",
-          "DEMO-00001234",
-          "KHACH TRAI NGHIEM",
-          at,
-          at,
-        );
-        seedBuyerSamples(db, {
-          userId: uid,
-          actorId: admin.id,
-          policyId: policy.id,
-          at,
-          tag,
+        // Một transaction cho cả tài khoản lẫn dữ liệu mẫu: lỗi ở bước nào cũng không để lại dữ liệu dở.
+        transaction(db, () => {
+          db.prepare("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?,?,?)").run(
+            uid,
+            `khach-${tag}@demo.local`,
+            "Khách trải nghiệm",
+            passwordHash(token()),
+            "user",
+            "active",
+            "Ngân hàng mô phỏng",
+            "DEMO-00001234",
+            "KHACH TRAI NGHIEM",
+            at,
+            at,
+          );
+          seedBuyerSamples(db, {
+            userId: uid,
+            actorId: admin.id,
+            policyId: policy.id,
+            at,
+            tag,
+          });
         });
         const found = db.prepare("SELECT * FROM users WHERE id=?").get(uid);
         send({ user: safeUser(found), csrf: beginSession(uid) });
@@ -684,6 +727,9 @@ export function createApp(
                 "SELECT COUNT(*) n FROM withdrawals WHERE status IN ('requested','approved')",
               )
               .get().n,
+            pendingOrders: db
+              .prepare("SELECT COUNT(*) n FROM orders WHERE status='pending'")
+              .get().n,
             // Mỗi bút toán phải có tổng bằng 0 (gồm tài khoản đối ứng clearing).
             unbalancedJournals: db
               .prepare(
@@ -738,6 +784,63 @@ export function createApp(
                 .all()
                 .map((x) => [x.key, x.value]),
             ),
+          });
+          return;
+        }
+        if (
+          method === "GET" &&
+          ["/api/admin/orders", "/api/admin/orders.csv"].includes(path)
+        ) {
+          const status = url.searchParams.get("status") || "";
+          ensure(
+            !status || ["pending", "approved", "rejected"].includes(status),
+            "Bộ lọc trạng thái không hợp lệ.",
+          );
+          const q = (url.searchParams.get("q") || "").trim().slice(0, 100);
+          const like = "%" + q.replace(/[\\%_]/g, (c) => "\\" + c) + "%";
+          const where =
+            "(?='' OR o.status=?) AND (?='' OR o.title LIKE ? ESCAPE '\\' OR u.email LIKE ? ESCAPE '\\' OR o.external_id LIKE ? ESCAPE '\\')";
+          const args = [status, status, q, like, like, like];
+          const from =
+            "FROM orders o JOIN users u ON u.id=o.user_id JOIN policies p ON p.id=o.policy_id";
+          if (path.endsWith(".csv")) {
+            // Xuất toàn bộ đơn khớp bộ lọc, không giới hạn theo trang đang xem.
+            const rows = db
+              .prepare(
+                `SELECT o.*,u.email ${from} WHERE ${where} ORDER BY o.updated_at DESC`,
+              )
+              .all(...args);
+            res.writeHead(200, {
+              "Content-Type": "text/csv; charset=utf-8",
+              "Content-Disposition": 'attachment; filename="doi-soat.csv"',
+              "Cache-Control": "no-store",
+            });
+            res.end(ordersCsv(rows));
+            return;
+          }
+          const pageSize = 50;
+          const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+          const total = db
+            .prepare(`SELECT COUNT(*) n ${from} WHERE ${where}`)
+            .get(...args).n;
+          const counts = Object.fromEntries(
+            db
+              .prepare(
+                `SELECT o.status, COUNT(*) n ${from} WHERE (?='' OR o.title LIKE ? ESCAPE '\\' OR u.email LIKE ? ESCAPE '\\' OR o.external_id LIKE ? ESCAPE '\\') GROUP BY o.status`,
+              )
+              .all(q, like, like, like)
+              .map((r) => [r.status, r.n]),
+          );
+          send({
+            rows: db
+              .prepare(
+                `SELECT o.*,u.email,p.version ${from} WHERE ${where} ORDER BY o.updated_at DESC LIMIT ? OFFSET ?`,
+              )
+              .all(...args, pageSize, (page - 1) * pageSize),
+            total,
+            counts,
+            page,
+            pageSize,
           });
           return;
         }
@@ -942,7 +1045,13 @@ export function createApp(
       }
       throw new AppError("Không tìm thấy chức năng.", 404);
     } catch (error) {
-      if (error.status) send({ error: error.message }, error.status);
+      if (error.status)
+        send(
+          error.reason
+            ? { error: error.message, reason: error.reason }
+            : { error: error.message },
+          error.status,
+        );
       else if (error.code === "ERR_INVALID_ARG_TYPE")
         // Giá trị JSON sai kiểu (object, mảng...) không bind được vào SQLite.
         send({ error: "Dữ liệu gửi lên không đúng định dạng." }, 400);

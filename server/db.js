@@ -28,14 +28,24 @@ export function openDb(
   }
   return db;
 }
+// Độ sâu transaction theo từng kết nối: lời gọi lồng nhau dùng SAVEPOINT,
+// nên một thao tác gồm nhiều bước nghiệp vụ vẫn hoàn tác trọn vẹn khi lỗi.
+const depth = new WeakMap();
 export function transaction(db, fn) {
-  db.exec("BEGIN IMMEDIATE");
+  const level = depth.get(db) || 0;
+  const savepoint = `sp_${level}`;
+  db.exec(level ? `SAVEPOINT ${savepoint}` : "BEGIN IMMEDIATE");
+  depth.set(db, level + 1);
   try {
     const result = fn();
-    db.exec("COMMIT");
+    db.exec(level ? `RELEASE ${savepoint}` : "COMMIT");
     return result;
   } catch (error) {
-    db.exec("ROLLBACK");
+    db.exec(
+      level ? `ROLLBACK TO ${savepoint}; RELEASE ${savepoint}` : "ROLLBACK",
+    );
     throw error;
+  } finally {
+    depth.set(db, level);
   }
 }
