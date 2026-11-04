@@ -15,7 +15,9 @@ Nếu không dùng Blueprint: **New → Web Service → chọn repository → Do
 
 ## Chỉ deploy khi CI đạt
 
-Repository có GitHub Actions chạy kiểm tra định dạng, kiểm thử nghiệp vụ/API, build và kiểm thử trình duyệt ở mỗi lần push. Để Render không deploy bản làm hỏng test: mở service → **Settings → Build & Deploy → Auto-Deploy**, chọn **After CI Checks Pass**. Khi đó commit có CI lỗi sẽ không được deploy; bản đang chạy giữ nguyên.
+Blueprint khai báo `autoDeployTrigger: checksPass`. Sau khi Blueprint đồng bộ, service phải hiển thị **Settings → Build & Deploy → Auto-Deploy → After CI Checks Pass**. Render chờ cả job kiểm thử ứng dụng và job **Docker smoke test** đạt trước khi deploy. Docker smoke build đúng Dockerfile, kiểm tra health/bootstrap, tệp React và tạo sandbox để xác nhận quyền ghi SQLite trong image cuối.
+
+Nhánh `main` cần bật branch protection: bắt buộc pull request, branch cập nhật với `main`, hai status check **Kiểm tra định dạng, nghiệp vụ, build và trình duyệt** và **Docker smoke test**; áp dụng cả quản trị viên, chặn force push và xóa nhánh. Dự án cá nhân có thể đặt 0 lượt phê duyệt để chủ repo tự merge PR sau khi CI đạt. Cấu hình bảo vệ là thiết lập trên GitHub, không tự bật chỉ bằng file trong repository.
 
 ## Kiểm tra sau deploy
 

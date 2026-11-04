@@ -819,10 +819,19 @@ export function createApp(
             return;
           }
           const pageSize = 50;
-          const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+          const requestedPage = Number(url.searchParams.get("page") || 1);
+          ensure(
+            Number.isSafeInteger(requestedPage) && requestedPage >= 1,
+            "Số trang phải là số nguyên dương.",
+          );
           const total = db
             .prepare(`SELECT COUNT(*) n ${from} WHERE ${where}`)
             .get(...args).n;
+          // Đối soát có thể làm trang cuối biến mất khỏi bộ lọc hiện tại.
+          const page = Math.min(
+            requestedPage,
+            Math.max(1, Math.ceil(total / pageSize)),
+          );
           const counts = Object.fromEntries(
             db
               .prepare(
@@ -834,7 +843,7 @@ export function createApp(
           send({
             rows: db
               .prepare(
-                `SELECT o.*,u.email,p.version ${from} WHERE ${where} ORDER BY o.updated_at DESC LIMIT ? OFFSET ?`,
+                `SELECT o.*,u.email,p.version ${from} WHERE ${where} ORDER BY o.updated_at DESC,o.id DESC LIMIT ? OFFSET ?`,
               )
               .all(...args, pageSize, (page - 1) * pageSize),
             total,
