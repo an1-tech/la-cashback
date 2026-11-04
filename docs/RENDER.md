@@ -13,6 +13,10 @@
 
 Nếu không dùng Blueprint: **New → Web Service → chọn repository → Docker → Free**. Thêm các biến trong `render.yaml`, nhập mật khẩu admin riêng dài ít nhất 16 ký tự, đặt health check `/healthz`, rồi deploy. Không cần chạy `npm start` ở máy cá nhân.
 
+## Chỉ deploy khi CI đạt
+
+Repository có GitHub Actions chạy kiểm tra định dạng, kiểm thử nghiệp vụ/API, build và kiểm thử trình duyệt ở mỗi lần push. Để Render không deploy bản làm hỏng test: mở service → **Settings → Build & Deploy → Auto-Deploy**, chọn **After CI Checks Pass**. Khi đó commit có CI lỗi sẽ không được deploy; bản đang chạy giữ nguyên.
+
 ## Kiểm tra sau deploy
 
 - Mở `/healthz`: phải trả `{"ok":true,"mode":"demo"}`.

@@ -1,5 +1,7 @@
 # Lá Cashback — MVP React
 
+[![CI](https://github.com/an1-tech/la-cashback/actions/workflows/ci.yml/badge.svg)](https://github.com/an1-tech/la-cashback/actions/workflows/ci.yml)
+
 Ứng dụng Affiliate + Cashback tiếng Việt, ưu tiên điện thoại. **Demo học tập, chạy local hoặc triển khai online theo [hướng dẫn Render](docs/RENDER.md). Chưa kết nối Shopee hoặc ngân hàng. Không có tiền thật.** Không có API Shopee, tỷ lệ hoa hồng Shopee hoặc thời gian ghi nhận nào được giả định.
 
 ## Chạy nhanh
@@ -111,6 +113,8 @@ npm run build
 npx playwright install chromium
 npm run test:ui
 ```
+
+GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) chạy cùng các bước trên, cộng kiểm tra định dạng Prettier, ở mỗi lần push lên `main` và mỗi pull request. Khi test trình duyệt lỗi, ảnh chụp và trace được lưu thành artifact `playwright-artifacts` trong 7 ngày.
 
 Kiểm thử UI tự khởi động cổng **3081**, DB `:memory:` riêng; không sửa DB demo đang dùng. Có thể đặt `QA_BROWSER_PATH` để dùng Chromium có sẵn. Ảnh chụp và trace nằm trong `artifacts/` (được gitignore). Xem `docs/QA.md` cho kết quả thực tế.
 

@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Kiểm tra định dạng, nghiệp vụ, build và trình duyệt
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Cài thư viện
+        run: npm ci
+
+      - name: Kiểm tra định dạng (Prettier)
+        run: npx prettier --check src server scripts tests e2e *.js *.json index.html README.md docs
+
+      - name: Kiểm thử nghiệp vụ và API
+        run: npm test
+
+      - name: Build giao diện
+        run: npm run build
+
+      - name: Cài Chromium cho Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Kiểm thử trình duyệt
+        run: npm run test:ui
+
+      - name: Lưu ảnh chụp và trace khi lỗi
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: artifacts/playwright
+          retention-days: 7
