@@ -40,9 +40,9 @@ export function Landing() {
           <div className="landing-wrap landing-hero-grid">
             <div className="landing-intro">
               <h1 id="landing-title">
-                Mua sắm.
+                Mua sắm
                 <br />
-                Nhận lại.
+                Nhận lại
               </h1>
               <p>
                 Trải nghiệm cách tạo link mua sắm, theo dõi đơn và nhận hoàn
