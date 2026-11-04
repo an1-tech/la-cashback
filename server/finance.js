@@ -230,7 +230,12 @@ function applyReport(db, p) {
   releaseFunds(db, click.user_id);
   return orderId;
 }
-export function ingestReport(db, raw, actor) {
+export function ingestReport(
+  db,
+  raw,
+  actor,
+  { action = "report.import", details = {} } = {},
+) {
   const p = normalizedReport(raw);
   const payload = JSON.stringify(p);
   const digest = hash(payload);
@@ -254,9 +259,10 @@ export function ingestReport(db, raw, actor) {
       orderId ? "processed" : "unmatched",
       now(),
     );
-    audit(db, actor, "report.import", p.eventId, {
+    audit(db, actor, action, p.eventId, {
       status: p.status,
       state: orderId ? "processed" : "unmatched",
+      ...details,
     });
     return {
       duplicate: false,

@@ -254,19 +254,17 @@
   width: 100%;
   aspect-ratio: 1;
   border-radius: 10px;
-  background-image: url("/images/shopping-categories.png");
-  background-size: 300% 100%;
-  background-repeat: no-repeat;
+  background: #b2b399 center / cover no-repeat;
   transition: filter 0.2s;
 }
 .photo-0 {
-  background-position: 0% center;
+  background-image: url("/images/category-0-400.webp");
 }
 .photo-1 {
-  background-position: 50% center;
+  background-image: url("/images/category-1-400.webp");
 }
 .photo-2 {
-  background-position: 100% center;
+  background-image: url("/images/category-2-400.webp");
 }
 .discovery-card:hover .category-photo {
   filter: brightness(1.08);
@@ -538,4 +536,7 @@
     transition: none;
   }
 }
-:root[data-theme="light"] .badge.pending { color: #76500b; background: #fff2d4; }
+:root[data-theme="light"] .badge.pending {
+  color: #76500b;
+  background: #fff2d4;
+}

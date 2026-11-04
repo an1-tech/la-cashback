@@ -183,6 +183,10 @@ test("Luồng React: đăng ký → link → đơn demo → quản trị duyệt
     .getByLabel("Hoa hồng do nguồn xác nhận (VND)")
     .fill("100000");
   await admin
+    .getByRole("dialog")
+    .getByLabel("Lý do điều chỉnh (bắt buộc)")
+    .fill("Nguồn gửi bản báo cáo cuối kỳ có hoa hồng mới");
+  await admin
     .getByRole("button", { name: "Ghi nhận kết quả đối soát" })
     .click();
   await expect(admin.getByRole("dialog")).not.toBeVisible();
@@ -207,6 +211,10 @@ test("Luồng React: đăng ký → link → đơn demo → quản trị duyệt
     .click();
   await page.getByLabel("Số tiền (VND)").fill("50000");
   await page.getByRole("button", { name: "Gửi yêu cầu rút mô phỏng" }).click();
+  await expect(
+    page.getByText(/Rút 50.000 đ về Ngân hàng mô phỏng/),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Xác nhận rút" }).click();
   await expect(page.getByText("Đã gửi yêu cầu", { exact: true })).toBeVisible();
   await admin.getByRole("button", { name: "Rút tiền", exact: true }).click();
   const withdrawalRow = admin.getByRole("row").filter({ hasText: email });

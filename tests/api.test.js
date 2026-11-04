@@ -550,3 +550,102 @@ test("Không tạo được chính sách hiệu lực lùi về quá khứ", asy
     await f.close();
   }
 });
+test("Sandbox khách: tài khoản riêng có dữ liệu mẫu, không đụng người mua chung", async () => {
+  const f = await fixture();
+  try {
+    const start = await request(f, "/auth/demo", { method: "POST", body: {} });
+    assert.equal(start.status, 200);
+    assert.match(start.data.user.email, /^khach-[0-9a-f]{8}@demo\.local$/);
+    const guest = { cookie: start.cookie, csrf: start.data.csrf };
+    const orders = await request(f, "/orders", guest);
+    assert.equal(orders.data.length, 4);
+    assert.ok(orders.data.every((o) => o.clicked_at));
+    const wallet = await request(f, "/wallet", guest);
+    assert.equal(wallet.data.balances.available, 76000);
+    const second = await request(f, "/auth/demo", { method: "POST", body: {} });
+    assert.notEqual(second.data.user.email, start.data.user.email);
+    const shared = await login(f);
+    assert.equal((await request(f, "/orders", shared)).data.length, 4);
+    for (let i = 0; i < 3; i++)
+      await request(f, "/auth/demo", { method: "POST", body: {} });
+    assert.equal(
+      (await request(f, "/auth/demo", { method: "POST", body: {} })).status,
+      429,
+    );
+  } finally {
+    await f.close();
+  }
+});
+test("Đối soát khác số nguồn cần lý do; nhật ký ghi đăng nhập và thao tác đối soát", async () => {
+  const f = await fixture();
+  try {
+    const admin = await login(f, "admin@demo.local");
+    const overview = await request(f, "/admin/overview", admin);
+    assert.equal(overview.data.stats.unbalancedJournals, 0);
+    const order = overview.data.orders.find((o) => o.status === "pending");
+    const reconcile = (body) =>
+      request(f, "/admin/reconcile", {
+        ...admin,
+        method: "POST",
+        body: { orderId: order.id, status: "approved", ...body },
+      });
+    const changed = await reconcile({
+      eventId: "api-diff-0001",
+      commission: order.commission + 5000,
+    });
+    assert.equal(changed.status, 400);
+    assert.match(changed.data.error, /Cần lý do/);
+    assert.equal(
+      (
+        await reconcile({
+          eventId: "api-diff-0002",
+          commission: order.commission + 5000,
+          reason: "Nguồn gửi bản điều chỉnh tăng hoa hồng",
+        })
+      ).status,
+      200,
+    );
+    const audit = (await request(f, "/admin/overview", admin)).data.audit;
+    assert.ok(audit.some((a) => a.action === "auth.login"));
+    const entry = audit.find((a) => a.action === "order.reconcile");
+    assert.equal(
+      JSON.parse(entry.details).previousCommission,
+      order.commission,
+    );
+  } finally {
+    await f.close();
+  }
+});
+test("Tệp tĩnh: route lạ trả 404, asset có mã băm cache vĩnh viễn, HSTS khi HTTPS", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "la-static-"));
+  const db = openDb(":memory:");
+  seed(db);
+  const server = createApp(db, { staticDir: dir, secureCookie: true });
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  const base = "http://127.0.0.1:" + server.address().port;
+  try {
+    writeFileSync(join(dir, "index.html"), "<!doctype html><title>x</title>");
+    const { mkdirSync } = await import("node:fs");
+    mkdirSync(join(dir, "assets"));
+    writeFileSync(join(dir, "assets", "index-abc.js"), "1");
+    writeFileSync(join(dir, "robots.txt"), "User-agent: *");
+    const app = await fetch(base + "/app");
+    assert.equal(app.status, 200);
+    assert.match(app.headers.get("strict-transport-security"), /max-age=/);
+    assert.equal((await fetch(base + "/khong-ton-tai")).status, 404);
+    const asset = await fetch(base + "/assets/index-abc.js");
+    assert.match(asset.headers.get("cache-control"), /immutable/);
+    const robots = await fetch(base + "/robots.txt");
+    assert.equal(
+      robots.headers.get("content-type"),
+      "text/plain; charset=utf-8",
+    );
+    const missing = await fetch(base + "/favicon.ico");
+    assert.equal(missing.status, 404);
+    assert.equal((await missing.json()).error, "Không tìm thấy.");
+  } finally {
+    await new Promise((r) => server.close(r));
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

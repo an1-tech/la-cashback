@@ -1,6 +1,6 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useApp } from "../context";
-import { money, date } from "../api";
+import { money, date, statusLabels } from "../api";
 import {
   Icon,
   Badge,
@@ -21,9 +21,23 @@ const sections = [
   ["support", "Hỗ trợ"],
   ["audit", "Nhật ký"],
 ];
+const tabFromHash = () => {
+  const key = location.hash.split("/")[1];
+  return sections.some(([k]) => k === key) ? key : "overview";
+};
 export function Admin() {
   const { version, refresh, notifyError } = useApp();
-  const [tab, setTab] = useState("overview");
+  const [tab, setTabState] = useState(tabFromHash);
+  // Ghi tab vào URL (#admin/orders) để tải lại trang hoặc chia sẻ link vẫn đúng tab.
+  const setTab = (key) => {
+    setTabState(key);
+    history.replaceState(null, "", "#admin/" + key);
+  };
+  useEffect(() => {
+    const sync = () => setTabState(tabFromHash());
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
   const state = useData("/admin/overview", `${version}:${tab}`);
   return (
     <>
@@ -46,6 +60,7 @@ export function Admin() {
           <button
             key={key}
             className={tab === key ? "active" : ""}
+            aria-current={tab === key ? "page" : undefined}
             onClick={() => setTab(key)}
           >
             {label}
@@ -118,6 +133,20 @@ function Overview({ data, setTab }) {
         </div>
         <div className="panel">
           <h2>Cần kiểm tra</h2>
+          <div
+            className={
+              "ledger-check " + (data.stats.unbalancedJournals ? "bad" : "ok")
+            }
+            role="status"
+          >
+            <Icon
+              name={data.stats.unbalancedJournals ? "info" : "check"}
+              size={18}
+            />
+            {data.stats.unbalancedJournals
+              ? `Sổ cái lệch: ${data.stats.unbalancedJournals} bút toán không cân bằng`
+              : "Sổ cái cân bằng: mọi bút toán có tổng bằng 0"}
+          </div>
           <div className="attention-row">
             <span>Báo cáo chưa xác định người mua</span>
             <strong>{data.unmatched.length}</strong>
@@ -149,9 +178,23 @@ function Reconcile({ data }) {
   const { mutate, setToast } = useApp();
   const [selected, setSelected] = useState(null),
     [results, setResults] = useState(null),
-    [unmatched, setUnmatched] = useState(null);
+    [unmatched, setUnmatched] = useState(null),
+    [status, setStatus] = useState(""),
+    [query, setQuery] = useState(""),
+    [commission, setCommission] = useState("");
   const event = useRef(crypto.randomUUID());
   const click = data.clicks[0];
+  const needle = query.trim().toLowerCase();
+  const orders = data.orders.filter(
+    (o) =>
+      (!status || o.status === status) &&
+      (!needle ||
+        [o.title, o.email, o.external_id].some((v) =>
+          String(v).toLowerCase().includes(needle),
+        )),
+  );
+  const changed =
+    selected && commission !== "" && Number(commission) !== selected.commission;
   const sample = JSON.stringify(
     [
       {
@@ -170,6 +213,42 @@ function Reconcile({ data }) {
   );
   return (
     <>
+      <div className="filter-bar admin-filter">
+        <div className="tabs">
+          {[
+            ["", "Tất cả"],
+            ["pending", "Chờ duyệt"],
+            ["approved", "Đã duyệt"],
+            ["rejected", "Bị từ chối"],
+          ].map(([v, t]) => (
+            <button
+              key={v}
+              className={status === v ? "active" : ""}
+              onClick={() => setStatus(v)}
+            >
+              {t} ({data.orders.filter((o) => !v || o.status === v).length})
+            </button>
+          ))}
+        </div>
+        <label className="admin-search">
+          <Icon name="search" size={16} />
+          <input
+            type="search"
+            aria-label="Tìm đơn theo tên, email hoặc mã đơn"
+            placeholder="Tìm theo tên, email, mã đơn…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+        <button
+          className="button compact"
+          disabled={!orders.length}
+          onClick={() => downloadCsv("doi-soat.csv", orders)}
+        >
+          <Icon name="download" size={15} />
+          Xuất CSV
+        </button>
+      </div>
       <div className="panel table-wrap">
         <table>
           <thead>
@@ -183,7 +262,7 @@ function Reconcile({ data }) {
             </tr>
           </thead>
           <tbody>
-            {data.orders.map((o) => (
+            {orders.map((o) => (
               <tr key={o.id}>
                 <td>
                   <strong>{o.title}</strong>
@@ -203,6 +282,7 @@ function Reconcile({ data }) {
                     className="button compact"
                     onClick={() => {
                       event.current = crypto.randomUUID();
+                      setCommission(String(o.commission));
                       setSelected(o);
                     }}
                   >
@@ -213,7 +293,15 @@ function Reconcile({ data }) {
             ))}
           </tbody>
         </table>
-        {!data.orders.length && <Empty title="Chưa có đơn để đối soát" />}
+        {!orders.length && (
+          <Empty
+            title={
+              data.orders.length
+                ? "Không có đơn khớp bộ lọc"
+                : "Chưa có đơn để đối soát"
+            }
+          />
+        )}
       </div>
       <div className="two-column section">
         <section className="panel">
@@ -369,11 +457,30 @@ function Reconcile({ data }) {
               min="0"
               step="1"
               name="commission"
-              defaultValue={selected.commission}
+              value={commission}
+              onChange={(e) => setCommission(e.target.value)}
               required
             />
-            <Field label="Lý do (bắt buộc khi từ chối)">
-              <textarea name="reason" rows={3} maxLength={500} />
+            {changed && (
+              <div className="alert" role="status">
+                Khác số nguồn đã báo ({money(selected.commission)}). Cần ghi lý
+                do điều chỉnh, ít nhất 10 ký tự.
+              </div>
+            )}
+            <Field
+              label={
+                changed
+                  ? "Lý do điều chỉnh (bắt buộc)"
+                  : "Lý do (bắt buộc khi từ chối)"
+              }
+            >
+              <textarea
+                name="reason"
+                rows={3}
+                maxLength={500}
+                minLength={changed ? 10 : undefined}
+                required={changed}
+              />
             </Field>
             <p className="microcopy mono">Sự kiện: {event.current}</p>
           </Form>
@@ -926,11 +1033,12 @@ function Audit({ data }) {
               <td>{date(a.created_at)}</td>
               <td className="email">{a.email}</td>
               <td>
-                <code>{a.action}</code>
+                <strong>{actionLabels[a.action] || a.action}</strong>
+                <small className="mono">{a.action}</small>
               </td>
               <td>
                 <span className="mono">{a.reference}</span>
-                <small className="mono">{a.details}</small>
+                <AuditDetails json={a.details} />
               </td>
             </tr>
           ))}
@@ -939,6 +1047,109 @@ function Audit({ data }) {
       {!data.audit.length && <Empty title="Chưa có thao tác" />}
     </div>
   );
+}
+const actionLabels = {
+  "auth.login": "Đăng nhập quản trị",
+  "auth.logout": "Đăng xuất quản trị",
+  "report.import": "Nhập báo cáo",
+  "report.resolve": "Gán báo cáo cho người mua",
+  "order.reconcile": "Đối soát đơn",
+  "withdrawal.approved": "Duyệt yêu cầu rút",
+  "withdrawal.rejected": "Từ chối yêu cầu rút",
+  "withdrawal.paid": "Ghi nhận đã thanh toán",
+  "withdrawal.failed": "Thanh toán thất bại",
+  "policy.create": "Tạo chính sách",
+  "balance.adjust": "Điều chỉnh số dư",
+  "user.status": "Đổi trạng thái tài khoản",
+  "ticket.respond": "Phản hồi hỗ trợ",
+  "content.update": "Sửa nội dung trang chủ",
+  "deal.save": "Lưu ưu đãi",
+  "bank.update": "Đổi ngân hàng nhận tiền",
+};
+const detailLabels = {
+  amount: "Số tiền",
+  commission: "Hoa hồng",
+  previousCommission: "Hoa hồng trước",
+  status: "Trạng thái",
+  state: "Xử lý",
+  reason: "Lý do",
+  reference: "Mã tham chiếu",
+  orderId: "Mã đơn",
+  clickId: "Mã lượt bấm",
+  userId: "Người dùng",
+  account: "Tài khoản",
+};
+const moneyKeys = ["amount", "commission", "previousCommission"];
+const valueLabels = {
+  processed: "Đã xử lý",
+  unmatched: "Chưa gán",
+  active: "Hoạt động",
+  blocked: "Đã khóa",
+};
+function AuditDetails({ json }) {
+  let details;
+  try {
+    details = JSON.parse(json);
+  } catch {
+    return <small className="mono">{json}</small>;
+  }
+  const entries = Object.entries(details || {}).filter(
+    ([, v]) => v !== "" && v !== null && typeof v !== "object",
+  );
+  if (!entries.length) return null;
+  return (
+    <dl className="audit-details">
+      {entries.map(([k, v]) => (
+        <div key={k}>
+          <dt>{detailLabels[k] || k}</dt>
+          <dd>
+            {moneyKeys.includes(k) && typeof v === "number"
+              ? money(v)
+              : valueLabels[v] || statusLabels[v] || String(v)}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+function downloadCsv(name, orders) {
+  const header = [
+    "Mã đơn",
+    "Sản phẩm",
+    "Người mua",
+    "Giá trị đơn",
+    "Hoa hồng",
+    "Tiền hoàn",
+    "Trạng thái",
+    "Cập nhật",
+  ];
+  const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const rows = orders.map((o) =>
+    [
+      o.external_id,
+      o.title,
+      o.email,
+      o.order_value,
+      o.commission,
+      o.cashback,
+      o.status,
+      o.updated_at,
+    ]
+      .map(cell)
+      .join(","),
+  );
+  // BOM giúp Excel đọc đúng tiếng Việt.
+  const blob = new Blob(
+    ["﻿" + [header.map(cell).join(","), ...rows].join("\n")],
+    {
+      type: "text/csv;charset=utf-8",
+    },
+  );
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 function localTime(value) {
   const d = value ? new Date(value) : new Date();

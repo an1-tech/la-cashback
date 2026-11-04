@@ -33,6 +33,7 @@ import {
   adjustBalance,
 } from "./finance.js";
 import { demoProvider } from "./providers/demo.js";
+import { seedBuyerSamples } from "./seed.js";
 import { communityRoutes } from "./community.js";
 const safeUser = (u) =>
   u && {
@@ -52,8 +53,14 @@ const mime = {
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
   ".png": "image/png",
+  ".jpg": "image/jpeg",
   ".webp": "image/webp",
+  ".json": "application/json; charset=utf-8",
+  ".webmanifest": "application/manifest+json; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
 };
+// Đường dẫn SPA hợp lệ; đường dẫn khác vẫn nhận index.html nhưng với mã 404.
+const appRoutes = new Set(["/", "/app", "/demo-shop", "/index.html"]);
 export function createApp(
   db,
   {
@@ -68,8 +75,13 @@ export function createApp(
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
     );
+    if (secureCookie)
+      res.setHeader(
+        "Strict-Transport-Security",
+        "max-age=31536000; includeSubDomains",
+      );
     const send = (data, status = 200) => {
       res.writeHead(status, {
         "Content-Type": "application/json; charset=utf-8",
@@ -103,24 +115,33 @@ export function createApp(
           "Đường dẫn không hợp lệ.",
           404,
         );
-        if (!extname(file)) file = resolve(staticDir, "index.html");
+        const spa = !extname(file);
+        if (spa) file = resolve(staticDir, "index.html");
+        let data;
         try {
           const info = await stat(file);
           ensure(info.isFile(), "Không tìm thấy.", 404);
-          const data = await readFile(file);
-          res.writeHead(200, {
-            "Content-Type": mime[extname(file)] || "application/octet-stream",
-            "Cache-Control":
-              extname(file) === ".html" ? "no-cache" : "public,max-age=3600",
-          });
-          res.end(req.method === "HEAD" ? undefined : data);
+          data = await readFile(file);
         } catch (error) {
           if (error.status) throw error;
           throw new AppError(
-            "Chưa có giao diện build. Chạy npm run build trước npm start.",
+            spa
+              ? "Chưa có giao diện build. Chạy npm run build trước npm start."
+              : "Không tìm thấy.",
             404,
           );
         }
+        // Vite gắn mã băm vào tên tệp trong /assets/, nên có thể cache vĩnh viễn.
+        res.writeHead(spa && !appRoutes.has(path) ? 404 : 200, {
+          "Content-Type": mime[extname(file)] || "application/octet-stream",
+          "Cache-Control":
+            extname(file) === ".html"
+              ? "no-cache"
+              : path.startsWith("/assets/")
+                ? "public,max-age=31536000,immutable"
+                : "public,max-age=86400",
+        });
+        res.end(req.method === "HEAD" ? undefined : data);
         return;
       }
       let body = {};
@@ -191,6 +212,7 @@ export function createApp(
         ![
           "/api/auth/login",
           "/api/auth/register",
+          "/api/auth/demo",
           "/api/auth/forgot",
           "/api/auth/reset",
         ].includes(path)
@@ -250,6 +272,10 @@ export function createApp(
         send({
           demo: true,
           publicDemo,
+          // Trên hosting không có ổ đĩa bền vững, DB được tạo lại khi máy chủ khởi động lại.
+          ephemeralData: publicDemo,
+          dataSince: db.prepare("SELECT MIN(created_at) AS at FROM users").get()
+            .at,
           provider: "demo",
           user: safeUser(user),
           csrf: user?.csrf || null,
@@ -312,14 +338,53 @@ export function createApp(
             );
           }
           rateClear(db, failKey);
+          if (found.role === "admin")
+            audit(db, found.id, "auth.login", found.id, {});
         }
         send({ user: safeUser(found), csrf: beginSession(found.id) });
+        return;
+      }
+      if (method === "POST" && path === "/api/auth/demo") {
+        // Mỗi khách có một người mua riêng kèm dữ liệu mẫu, không đụng tài khoản chung.
+        rateLimit(db, `demo-account:${ip}`, 5, 3600);
+        const admin = db
+          .prepare("SELECT id FROM users WHERE role='admin' LIMIT 1")
+          .get();
+        const policy = currentPolicy(db);
+        ensure(admin && policy, "Demo chưa sẵn sàng. Vui lòng thử lại.", 503);
+        const uid = id(),
+          tag = uid.slice(0, 8),
+          at = now();
+        db.prepare("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?,?,?)").run(
+          uid,
+          `khach-${tag}@demo.local`,
+          "Khách trải nghiệm",
+          passwordHash(token()),
+          "user",
+          "active",
+          "Ngân hàng mô phỏng",
+          "DEMO-00001234",
+          "KHACH TRAI NGHIEM",
+          at,
+          at,
+        );
+        seedBuyerSamples(db, {
+          userId: uid,
+          actorId: admin.id,
+          policyId: policy.id,
+          at,
+          tag,
+        });
+        const found = db.prepare("SELECT * FROM users WHERE id=?").get(uid);
+        send({ user: safeUser(found), csrf: beginSession(uid) });
         return;
       }
       if (method === "POST" && path === "/api/auth/logout") {
         db.prepare("DELETE FROM sessions WHERE token_hash=?").run(
           user.token_hash,
         );
+        if (user.role === "admin")
+          audit(db, user.id, "auth.logout", user.id, {});
         res.setHeader(
           "Set-Cookie",
           `la_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${secureCookie ? "; Secure" : ""}`,
@@ -457,7 +522,7 @@ export function createApp(
           );
         const rows = db
           .prepare(
-            "SELECT o.*,p.version,p.share_bps,p.hold_days FROM orders o JOIN policies p ON p.id=o.policy_id WHERE o.user_id=? AND (?='' OR o.status=?) AND (?='' OR substr(o.created_at,1,10)>=?) AND (?='' OR substr(o.created_at,1,10)<=?) ORDER BY o.created_at DESC LIMIT 500",
+            "SELECT o.*,p.version,p.share_bps,p.hold_days,c.created_at AS clicked_at FROM orders o JOIN policies p ON p.id=o.policy_id JOIN clicks c ON c.id=o.click_id WHERE o.user_id=? AND (?='' OR o.status=?) AND (?='' OR substr(o.created_at,1,10)>=?) AND (?='' OR substr(o.created_at,1,10)<=?) ORDER BY o.created_at DESC LIMIT 500",
           )
           .all(user.id, status, status, from, from, to, to);
         send(rows);
@@ -619,6 +684,12 @@ export function createApp(
                 "SELECT COUNT(*) n FROM withdrawals WHERE status IN ('requested','approved')",
               )
               .get().n,
+            // Mỗi bút toán phải có tổng bằng 0 (gồm tài khoản đối ứng clearing).
+            unbalancedJournals: db
+              .prepare(
+                "SELECT COUNT(*) n FROM (SELECT journal_id FROM ledger GROUP BY journal_id HAVING SUM(amount)!=0)",
+              )
+              .get().n,
           };
           send({
             stats,
@@ -720,6 +791,13 @@ export function createApp(
             ["approved", "rejected"].includes(body.status),
             "Chỉ duyệt hoặc từ chối.",
           );
+          const commission = integer(body.commission, "Hoa hồng");
+          const reason =
+            typeof body.reason === "string" ? body.reason.trim() : "";
+          ensure(
+            commission === order.commission || reason.length >= 10,
+            "Hoa hồng khác số nguồn đã báo. Cần lý do ít nhất 10 ký tự.",
+          );
           send(
             ingestReport(
               db,
@@ -730,11 +808,19 @@ export function createApp(
                 clickId: order.click_id,
                 title: order.title,
                 orderValue: order.order_value,
-                commission: integer(body.commission, "Hoa hồng"),
+                commission,
                 status: body.status,
-                reason: body.reason,
+                reason,
               },
               user.id,
+              {
+                action: "order.reconcile",
+                details: {
+                  orderId: order.id,
+                  commission,
+                  previousCommission: order.commission,
+                },
+              },
             ),
           );
           return;

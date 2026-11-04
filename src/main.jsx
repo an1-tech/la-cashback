@@ -1,6 +1,15 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { api, setCsrf, money, date } from "./api";
+import {
+  api,
+  setCsrf,
+  money,
+  date,
+  pageTitles,
+  currentPage,
+  shopeeLinkError,
+  digits,
+} from "./api";
 import {
   Icon,
   Badge,
@@ -30,6 +39,7 @@ import {
 import "./styles.css";
 import "./redesign.css";
 import "./community.css";
+import "./upgrades.css";
 import { Context, useApp } from "./context";
 const nav = [
   ["home", "Trang chủ", "home"],
@@ -42,11 +52,7 @@ function App() {
   const [boot, setBoot] = useState(null),
     [error, setError] = useState(""),
     [version, setVersion] = useState(0),
-    [page, setPage] = useState(
-      location.pathname === "/demo-shop"
-        ? "demo"
-        : location.hash.slice(1).split("?")[0] || "home",
-    ),
+    [page, setPage] = useState(currentPage),
     [modal, setModal] = useState(null),
     [toast, setToast] = useState("");
   const [theme, setTheme] = useState(
@@ -60,15 +66,36 @@ function App() {
   };
   useEffect(() => {
     refresh().catch((e) => setError(e.message));
-    const handler = () =>
-      setPage(
-        location.pathname === "/demo-shop"
-          ? "demo"
-          : location.hash.slice(1).split("?")[0] || "home",
-      );
+    const handler = () => setPage(currentPage());
     window.addEventListener("hashchange", handler);
     return () => window.removeEventListener("hashchange", handler);
   }, []);
+  useEffect(() => {
+    const expired = () =>
+      refresh()
+        .then(() => {
+          setToast("Phiên đăng nhập đã kết thúc. Vui lòng đăng nhập lại.");
+          setModal("auth");
+        })
+        .catch(() => {});
+    window.addEventListener("la:unauthorized", expired);
+    return () => window.removeEventListener("la:unauthorized", expired);
+  }, []);
+  useEffect(() => {
+    document.title =
+      page === "home"
+        ? "Lá Cashback — Ứng dụng hoàn tiền"
+        : (pageTitles[page] || "Trang không tồn tại") + " · Lá Cashback";
+  }, [page]);
+  useEffect(() => {
+    if (page !== "try" || !boot) return;
+    if (boot.user) navigate("home");
+    else
+      startDemo().catch((e) => {
+        setToast(e.message);
+        navigate("home");
+      });
+  }, [page, boot]);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("la-theme", theme);
@@ -90,6 +117,14 @@ function App() {
         ? "instant"
         : "smooth",
     });
+  };
+  // Tạo người mua sandbox riêng, không cần đăng ký.
+  const startDemo = async () => {
+    await api("/auth/demo", { method: "POST", body: {} });
+    await refresh();
+    setModal(null);
+    navigate("home");
+    setToast("Đã tạo tài khoản dùng thử riêng của bạn, kèm dữ liệu mẫu.");
   };
   const mutate = async (path, body, method = "POST") => {
     const result = await api(path, { method, body });
@@ -128,27 +163,9 @@ function App() {
     setModal,
     setToast,
     notifyError,
+    startDemo,
   };
-  const title =
-    {
-      home: "Trang chủ",
-      orders: "Đơn hàng của bạn",
-      deals: "Ưu đãi",
-      wallet: "Số dư & rút tiền",
-      profile: "Tài khoản của bạn",
-      admin: "Không gian quản trị",
-      demo: "Cửa hàng mô phỏng",
-      feed: "Bảng tin Lá",
-      links: "Tạo link hoàn tiền",
-      settings: "Cài đặt tài khoản",
-      help: "Hỏi đáp & hỗ trợ",
-      checkin: "Điểm danh mỗi ngày",
-      membership: "Hạng thành viên",
-      referrals: "Giới thiệu bạn bè",
-      ranking: "Bảng xếp hạng",
-      gifts: "Mã quà tặng",
-      rewards: "Phần thưởng của tôi",
-    }[page] || "Lá Cashback";
+  const title = pageTitles[page] || "Lá Cashback";
   return (
     <Context.Provider value={context}>
       <div className="app-shell">
@@ -290,7 +307,15 @@ function App() {
           <main className="main-content">
             <div className="demo-notice">
               <Icon name="info" size={15} />
-              <span>Bản demo · Đơn hàng và thanh toán mô phỏng</span>
+              <span>
+                Bản demo · Đơn hàng và thanh toán mô phỏng
+                {boot.ephemeralData && (
+                  <>
+                    {" · "}Dữ liệu được làm mới khi máy chủ khởi động lại (từ{" "}
+                    {date(boot.dataSince)})
+                  </>
+                )}
+              </span>
               <button onClick={() => setModal("guide")}>
                 Tìm hiểu <Icon name="arrow" size={13} />
               </button>
@@ -334,6 +359,8 @@ function App() {
               <Deals />
             ) : page === "demo" ? (
               <DemoShop />
+            ) : page === "try" ? (
+              <Loading />
             ) : !boot.user ? (
               <div className="panel">
                 <Empty title="Một tài khoản, mọi khoản hoàn" icon="user">
@@ -577,6 +604,7 @@ function RecentOrders() {
     </DataState>
   );
 }
+const pendingLinkKey = "la-pending-link";
 function LinkBox({ initialUrl = "" }) {
   const inputId = useId();
   const { boot, mutate, setModal, setToast } = useApp();
@@ -585,12 +613,7 @@ function LinkBox({ initialUrl = "" }) {
     [created, setCreated] = useState(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
-  const check = async (e) => {
-    e.preventDefault();
-    if (!boot.user) {
-      setModal("auth");
-      return;
-    }
+  const inspect = async (url) => {
     setBusy(true);
     setError("");
     try {
@@ -598,7 +621,7 @@ function LinkBox({ initialUrl = "" }) {
       setCreated(null);
       const result = await api("/links/inspect", {
         method: "POST",
-        body: { url: value },
+        body: { url },
       });
       const click = await mutate("/clicks", { url: result.url });
       setChecked(result);
@@ -609,6 +632,28 @@ function LinkBox({ initialUrl = "" }) {
       setBusy(false);
     }
   };
+  const check = (e) => {
+    e.preventDefault();
+    const problem = shopeeLinkError(value);
+    if (problem) {
+      setError(problem);
+      return;
+    }
+    if (!boot.user) {
+      // Giữ link để tự kiểm tra tiếp sau khi đăng nhập, không bắt dán lại.
+      sessionStorage.setItem(pendingLinkKey, value.trim());
+      setModal("auth");
+      return;
+    }
+    inspect(value.trim());
+  };
+  useEffect(() => {
+    const pending = sessionStorage.getItem(pendingLinkKey);
+    if (!boot.user || !pending) return;
+    sessionStorage.removeItem(pendingLinkKey);
+    setValue(pending);
+    inspect(pending);
+  }, [boot.user?.id]);
   const buy = async () => {
     setBusy(true);
     setError("");
@@ -626,13 +671,15 @@ function LinkBox({ initialUrl = "" }) {
       <label className="link-visible-label" htmlFor={inputId}>
         Dán link sản phẩm Shopee
       </label>
-      <form onSubmit={check}>
+      <form onSubmit={check} noValidate>
         <div className="link-input">
           <Icon name="link" size={20} />
           <input
             id={inputId}
             aria-label="Link sản phẩm Shopee"
+            aria-invalid={error ? true : undefined}
             type="url"
+            inputMode="url"
             required
             placeholder="https://shopee.vn/..."
             value={value}
@@ -992,6 +1039,7 @@ function Orders() {
                         </strong>
                       </div>
                     </div>
+                    <OrderTimeline order={o} />
                     {o.reason && <div className="alert error">{o.reason}</div>}
                     <p className="mono microcopy">
                       Tham chiếu: {o.id}
@@ -1029,6 +1077,165 @@ function Orders() {
       </div>
       {ticket && <Support orderId={ticket} onClose={() => setTicket(null)} />}
     </>
+  );
+}
+function WithdrawForm({ available, minimum, bank, onSubmit }) {
+  const inputId = useId();
+  const [amount, setAmount] = useState(""),
+    [confirming, setConfirming] = useState(false),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  const value = Number(amount || 0);
+  const choices = [
+    [50000, money(50000)],
+    [100000, money(100000)],
+    [available, "Rút hết"],
+  ].filter(
+    ([n], i, all) =>
+      n >= minimum && n <= available && all.findIndex(([m]) => m === n) === i,
+  );
+  const pick = (n) => {
+    setAmount(String(n));
+    setConfirming(false);
+    setError("");
+  };
+  const review = (e) => {
+    e.preventDefault();
+    const problem = !value
+      ? "Hãy nhập số tiền muốn rút."
+      : available < minimum
+        ? `Cần ít nhất ${money(minimum)} khả dụng để rút.`
+        : value < minimum
+          ? `Số tiền rút tối thiểu là ${money(minimum)}.`
+          : value > available
+            ? `Bạn chỉ có ${money(available)} có thể rút.`
+            : "";
+    setError(problem);
+    setConfirming(!problem);
+  };
+  return (
+    <form className="form withdraw-form" onSubmit={review} noValidate>
+      <label className="field" htmlFor={inputId}>
+        <span>Số tiền (VND)</span>
+      </label>
+      <div className="amount-input">
+        <input
+          id={inputId}
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder={
+            "Ví dụ: " + new Intl.NumberFormat("vi-VN").format(minimum)
+          }
+          aria-invalid={error ? true : undefined}
+          value={amount ? new Intl.NumberFormat("vi-VN").format(value) : ""}
+          onChange={(e) => pick(digits(e.target.value).slice(0, 13))}
+        />
+        <span aria-hidden="true">đ</span>
+      </div>
+      {choices.length > 0 && (
+        <div className="amount-chips" aria-label="Chọn nhanh số tiền">
+          {choices.map(([n, label]) => (
+            <button
+              type="button"
+              key={label}
+              className={"chip " + (value === n ? "active" : "")}
+              aria-pressed={value === n}
+              onClick={() => pick(n)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      {error && (
+        <div role="alert" className="alert error">
+          {error}
+        </div>
+      )}
+      {confirming ? (
+        <div
+          className="withdraw-confirm"
+          role="group"
+          aria-label="Xác nhận rút tiền"
+        >
+          <p>
+            Rút <b>{money(value)}</b> về {bank.label} ••••{" "}
+            {bank.account.slice(-4)}. Số tiền này được giữ ngay khi gửi.
+          </p>
+          <div className="inline-actions">
+            <button
+              type="button"
+              className="button primary"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setError("");
+                try {
+                  await onSubmit(value);
+                  setAmount("");
+                  setConfirming(false);
+                } catch (err) {
+                  setError(err.message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? <span className="spinner" /> : "Xác nhận rút"}
+            </button>
+            <button
+              type="button"
+              className="button"
+              disabled={busy}
+              onClick={() => setConfirming(false)}
+            >
+              Sửa số tiền
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button className="button primary" type="submit">
+          Gửi yêu cầu rút mô phỏng
+        </button>
+      )}
+      <p className="microcopy">
+        Duyệt yêu cầu chưa đồng nghĩa với đã thanh toán. Không có tiền thật được
+        chuyển trong demo.
+      </p>
+    </form>
+  );
+}
+// Các mốc của một đơn: đã qua (done), đang chờ (current) hoặc chưa tới.
+function OrderTimeline({ order: o }) {
+  const reviewed = o.status !== "pending";
+  const steps = [
+    ["Bấm link theo dõi", date(o.clicked_at), "done"],
+    ["Đơn được ghi nhận", date(o.created_at), "done"],
+    [
+      o.status === "rejected" ? "Bị từ chối" : "Đối soát hoa hồng",
+      reviewed ? date(o.updated_at) : "Đang chờ quản trị viên duyệt",
+      reviewed ? (o.status === "rejected" ? "failed" : "done") : "current",
+    ],
+    [
+      "Có thể rút",
+      o.status !== "approved"
+        ? "Chưa đủ điều kiện"
+        : o.released
+          ? "Đã chuyển sang số dư khả dụng"
+          : "Dự kiến " + date(o.available_at),
+      o.status !== "approved" ? "" : o.released ? "done" : "current",
+    ],
+  ];
+  return (
+    <ol className="order-timeline" aria-label="Tiến trình đơn hàng">
+      {steps.map(([label, detail, state]) => (
+        <li key={label} className={state}>
+          <span className="timeline-dot" aria-hidden="true" />
+          <strong>{label}</strong>
+          <small>{detail}</small>
+        </li>
+      ))}
+    </ol>
   );
 }
 function Wallet() {
@@ -1091,35 +1298,19 @@ function Wallet() {
                       </p>
                     </div>
                   </div>
-                  <Form
-                    submitLabel="Gửi yêu cầu rút mô phỏng"
-                    onSubmit={async (v) => {
+                  <WithdrawForm
+                    available={data.balances.available}
+                    minimum={data.policy.minimum_withdrawal}
+                    bank={boot.user.bank}
+                    onSubmit={async (amount) => {
                       await mutate("/withdrawals", {
-                        amount: Number(v.amount),
+                        amount,
                         requestKey: key.current,
                       });
                       key.current = crypto.randomUUID();
                       setToast("Đã giữ tiền cho yêu cầu rút.");
                     }}
-                  >
-                    <Field
-                      label="Số tiền (VND)"
-                      name="amount"
-                      type="number"
-                      step="1"
-                      min={data.policy.minimum_withdrawal}
-                      max={Math.max(
-                        data.policy.minimum_withdrawal,
-                        data.balances.available,
-                      )}
-                      placeholder="Ví dụ: 50000"
-                      required
-                    />
-                    <p className="microcopy">
-                      Duyệt yêu cầu chưa đồng nghĩa với đã thanh toán. Không có
-                      tiền thật được chuyển trong demo.
-                    </p>
-                  </Form>
+                  />
                 </>
               ) : (
                 <>
@@ -1410,10 +1601,11 @@ function TicketList() {
   );
 }
 function Auth() {
-  const { boot, setModal, refresh, setToast } = useApp();
+  const { boot, setModal, refresh, setToast, startDemo } = useApp();
   const [mode, setMode] = useState("login"),
     [resetToken, setResetToken] = useState("");
   const [demo, setDemo] = useState("user");
+  const [starting, setStarting] = useState(false);
   return (
     <Modal
       title={
@@ -1426,6 +1618,28 @@ function Auth() {
       onClose={() => setModal(null)}
     >
       <p className="muted">Một nơi để theo dõi mọi khoản hoàn tiền của bạn.</p>
+      <div className="quick-try">
+        <div>
+          <strong>Dùng thử ngay, không cần đăng ký</strong>
+          <span>Tài khoản riêng của bạn, có sẵn đơn và số dư mẫu.</span>
+        </div>
+        <button
+          type="button"
+          className="button primary"
+          disabled={starting}
+          onClick={async () => {
+            setStarting(true);
+            try {
+              await startDemo();
+            } catch (e) {
+              setToast(e.message);
+              setStarting(false);
+            }
+          }}
+        >
+          {starting ? <span className="spinner" /> : "Dùng thử ngay"}
+        </button>
+      </div>
       <div className="tabs">
         {[
           ["login", "Đăng nhập"],
@@ -1815,6 +2029,27 @@ function isLanding() {
   );
 }
 
+function NotFound() {
+  useEffect(() => {
+    document.title = "Không tìm thấy trang · Lá Cashback";
+  }, []);
+  return (
+    <main className="startup-error not-found">
+      <Icon name="leaf" size={40} />
+      <h1>Không tìm thấy trang này</h1>
+      <p>Đường dẫn có thể đã đổi hoặc bị gõ nhầm.</p>
+      <div className="inline-actions">
+        <a className="button primary" href="/app">
+          Mở ứng dụng
+        </a>
+        <a className="button" href="/">
+          Về trang giới thiệu
+        </a>
+      </div>
+    </main>
+  );
+}
+const knownPaths = ["/", "/app", "/demo-shop", "/index.html"];
 function Site() {
   const [showLanding, setShowLanding] = useState(isLanding);
   useEffect(() => {
@@ -1822,6 +2057,7 @@ function Site() {
     window.addEventListener("hashchange", syncRoute);
     return () => window.removeEventListener("hashchange", syncRoute);
   }, []);
+  if (!knownPaths.includes(location.pathname)) return <NotFound />;
   return showLanding ? <Landing /> : <App />;
 }
 

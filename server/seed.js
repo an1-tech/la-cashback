@@ -99,6 +99,17 @@ export function seed(db, { adminPassword = DEMO_PASSWORD } = {}) {
         deal[5],
       );
   });
+  seedBuyerSamples(db, { userId, actorId: adminId, policyId, at });
+  return true;
+}
+
+// Đơn, ví và lịch sử rút mẫu cho một người mua. Dùng cho seed và sandbox khách.
+// `tag` giữ mã sự kiện, mã đơn và mã thanh toán duy nhất giữa các sandbox.
+export function seedBuyerSamples(
+  db,
+  { userId, actorId, policyId, at = now(), tag = "" },
+) {
+  const suffix = tag ? "-" + tag : "";
   const examples = [
     ["Bàn phím cơ • đơn mẫu", 1290000, 180000, "approved"],
     ["Tai nghe không dây • đơn mẫu", 649000, 42000, "pending"],
@@ -122,8 +133,8 @@ export function seed(db, { adminPassword = DEMO_PASSWORD } = {}) {
     ingestReport(
       db,
       {
-        eventId: `seed-${index}`,
-        externalId: `DEMO-102${index}`,
+        eventId: `seed${suffix}-${index}`,
+        externalId: `DEMO-102${index}${suffix}`,
         itemId: "1",
         clickId: click,
         title,
@@ -135,11 +146,17 @@ export function seed(db, { adminPassword = DEMO_PASSWORD } = {}) {
             ? "Hoa hồng bị từ chối trong kịch bản demo."
             : "",
       },
-      adminId,
+      actorId,
     );
   }
   const w = requestWithdrawal(db, userId, 50000, "seed-withdrawal");
-  processWithdrawal(db, w.id, "approved", "", "", adminId);
-  processWithdrawal(db, w.id, "paid", "", "DEMO-SEED-TRANSFER", adminId);
-  return true;
+  processWithdrawal(db, w.id, "approved", "", "", actorId);
+  processWithdrawal(
+    db,
+    w.id,
+    "paid",
+    "",
+    "DEMO-SEED-TRANSFER" + suffix.toUpperCase(),
+    actorId,
+  );
 }

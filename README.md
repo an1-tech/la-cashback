@@ -32,7 +32,7 @@ Mở <http://127.0.0.1:5173>. Vite proxy `/api` sang backend cổng 3080. Dừng
 | Quản trị                 | `admin@demo.local` | `Demo@123456` |
 | Người mua chưa có đơn    | `khac@demo.local`  | `Demo@123456` |
 
-Đăng nhập có nút chọn Người mua / Quản trị để điền nhanh tài khoản thử. Cũng có thể đăng ký tài khoản mới bằng email giả. Ngân hàng duy nhất là “Ngân hàng mô phỏng”; tài khoản phải theo mẫu `DEMO-00001234`. Không nhập dữ liệu thật. Mật khẩu mẫu là thông tin công khai phục vụ demo.
+Nút **Dùng thử ngay** (trên trang giới thiệu, hoặc trong hộp đăng nhập, hoặc mở `/app#try`) tạo một người mua sandbox riêng `khach-xxxxxxxx@demo.local` kèm đơn, ví và lịch sử rút mẫu, không cần đăng ký và không đụng dữ liệu của tài khoản chung. Giới hạn 5 sandbox/giờ cho mỗi IP. Đăng nhập có nút chọn Người mua / Quản trị để điền nhanh tài khoản thử. Cũng có thể đăng ký tài khoản mới bằng email giả. Ngân hàng duy nhất là “Ngân hàng mô phỏng”; tài khoản phải theo mẫu `DEMO-00001234`. Không nhập dữ liệu thật. Mật khẩu mẫu là thông tin công khai phục vụ demo.
 
 ## Thử toàn bộ hành trình
 
@@ -45,6 +45,12 @@ Mở <http://127.0.0.1:5173>. Vite proxy `/api` sang backend cổng 3080. Dừng
 7. Người mua tải lại ví để xem kết quả, thông báo và sổ giao dịch. Mỗi phiên chỉ cập nhật sau thao tác/tải lại; chưa có push thời gian thực.
 
 ## Đã hoạt động
+
+- Nâng cấp 11/2026: trang giới thiệu có menu điện thoại, ví dụ tính tiền hoàn và hỏi đáp; ảnh WebP (17 KB thay cho PNG 1,9 MB); ảnh chia sẻ Open Graph, manifest, `robots.txt`, tiêu đề tab theo trang và trang 404 riêng.
+- Link dán khi chưa đăng nhập được kiểm tra ngay ở trình duyệt và được giữ lại, đăng nhập xong tự tạo link. Thông báo lỗi form bằng tiếng Việt. Phiên hết hạn (401) tự đưa giao diện về trạng thái chưa đăng nhập.
+- Đơn hàng có dòng thời gian: bấm link → ghi nhận → đối soát → có thể rút. Form rút có định dạng hàng nghìn, nút chọn nhanh và bước xác nhận.
+- Quản trị: tab lưu trong URL (`#admin/orders`), lọc/tìm/xuất CSV đơn, cảnh báo và bắt buộc lý do khi hoa hồng khác số nguồn, kiểm tra sổ cái cân bằng, nhật ký hiển thị tiếng Việt và ghi đăng nhập/đăng xuất quản trị.
+- Demo online hiển thị rõ dữ liệu được làm mới khi máy chủ khởi động lại.
 
 - Bố cục mở rộng cho màn hình 1920/2560 px; trang cá nhân chia nhóm tiền/đơn hàng, thành viên/phần thưởng và thông tin/hỗ trợ; điện thoại giữ năm đích điều hướng chính.
 - Bảng tin có tìm kiếm, lọc chuyên mục, bài ghim, thích/bỏ thích và sao chép link bài. Quản trị viên có thể đăng và ẩn bài ngay tại bảng tin.

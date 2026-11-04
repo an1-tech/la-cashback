@@ -25,7 +25,9 @@ Nếu không dùng Blueprint: **New → Web Service → chọn repository → Do
 
 ## Giới hạn của gói Free
 
-Theo tài liệu Render, dịch vụ Free có thể ngủ khi không hoạt động; lần truy cập đầu cần thời gian khởi động. File local không bền vững, SQLite có thể mất khi restart/redeploy. Khi DB mới, ứng dụng tự tạo lại dữ liệu mẫu. Đây là bản trình diễn có thể khởi tạo lại, không dùng giữ dữ liệu quan trọng hoặc tiền thật.
+Theo tài liệu Render, dịch vụ Free có thể ngủ khi không hoạt động; lần truy cập đầu cần thời gian khởi động. File local không bền vững, SQLite có thể mất khi restart/redeploy. Khi DB mới, ứng dụng tự tạo lại dữ liệu mẫu; thanh thông báo trong ứng dụng ghi rõ dữ liệu có từ thời điểm nào, và phiên đăng nhập cũ sẽ tự chuyển về trạng thái chưa đăng nhập. Đây là bản trình diễn có thể khởi tạo lại, không dùng giữ dữ liệu quan trọng hoặc tiền thật.
+
+Muốn lần mở đầu không phải chờ máy chủ thức dậy: dùng dịch vụ giám sát miễn phí (ví dụ UptimeRobot) gọi `/healthz` khoảng 10 phút một lần. Việc này giữ máy chủ chạy nhưng không làm dữ liệu bền vững khi redeploy.
 
 Muốn giữ dữ liệu dài hạn: chọn máy chủ có volume bền vững, ví dụ Render trả phí có disk gắn vào `/app/data` (cần tự duyệt chi phí trước khi bật). Không chạy nhiều instance cùng SQLite. Không sao chép DB đang ghi mà bỏ qua WAL. Không tắt `DEMO_MODE` để giả lập vận hành thật.
 

@@ -133,6 +133,7 @@ export function Icon({ name, size = 20, ...props }) {
       </>
     ),
     chevron: <path d="m9 5 7 7-7 7" />,
+    menu: <path d="M4 7h16M4 12h16M4 17h16" />,
     close: <path d="m6 6 12 12M6 18 18 6" />,
     copy: (
       <>
@@ -259,6 +260,34 @@ export function DataState({ state, children }) {
     );
   return children(state.data);
 }
+// Thay thông báo mặc định của trình duyệt (theo ngôn ngữ máy) bằng tiếng Việt.
+export function validityMessage(el) {
+  const v = el.validity;
+  if (v.valueMissing)
+    return el.tagName === "SELECT"
+      ? "Vui lòng chọn một mục."
+      : "Vui lòng điền thông tin này.";
+  if (v.typeMismatch)
+    return el.type === "email"
+      ? "Email chưa đúng định dạng, ví dụ ban@demo.local."
+      : "Đường dẫn cần bắt đầu bằng https://.";
+  if (v.tooShort) return `Cần ít nhất ${el.minLength} ký tự.`;
+  if (v.tooLong) return `Tối đa ${el.maxLength} ký tự.`;
+  if (v.rangeUnderflow)
+    return `Giá trị nhỏ nhất là ${Number(el.min).toLocaleString("vi-VN")}.`;
+  if (v.rangeOverflow)
+    return `Giá trị lớn nhất là ${Number(el.max).toLocaleString("vi-VN")}.`;
+  if (v.stepMismatch) return "Hãy nhập số nguyên.";
+  if (v.badInput) return "Hãy nhập một số hợp lệ.";
+  if (v.patternMismatch) return "Giá trị chưa đúng định dạng yêu cầu.";
+  return "";
+}
+const localizeInvalid = (e) => {
+  const el = e.target;
+  el.setCustomValidity("");
+  el.setCustomValidity(validityMessage(el));
+};
+const clearInvalid = (e) => e.target.setCustomValidity?.("");
 export function Form({
   onSubmit,
   children,
@@ -272,6 +301,9 @@ export function Form({
   return (
     <form
       className={"form " + className}
+      onInvalidCapture={localizeInvalid}
+      onInputCapture={clearInvalid}
+      onChangeCapture={clearInvalid}
       onSubmit={async (e) => {
         e.preventDefault();
         if (busy) return;

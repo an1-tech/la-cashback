@@ -20,7 +20,7 @@ test("Landing routes to the app and preserves old shared links", async ({
         fullPage: true,
       });
   }
-  const start = page.getByRole("link", { name: "Tạo link dùng thử" });
+  const start = page.getByRole("link", { name: "Tôi đã có tài khoản" });
   await start.focus();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/app#links$/);
@@ -67,4 +67,42 @@ test("Home: responsive layout, keyboard focus and category shortcut", async ({
     page.getByRole("button", { name: "Công nghệ", exact: true }),
   ).toHaveClass("active");
   await expect(page.locator(".deal-card")).toHaveCount(1);
+});
+
+test("Dùng thử ngay: sandbox riêng, link được giữ qua đăng nhập, menu mobile", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const menu = page.getByRole("button", { name: "Mở menu" });
+  await menu.click();
+  await expect(
+    page.getByRole("navigation", { name: "Điều hướng trang giới thiệu" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Đóng menu" }).click();
+  await page.goto("/app");
+  const link = page.getByLabel("Link sản phẩm Shopee");
+  await link.fill("https://www.lazada.vn/products/abc-i1.html");
+  await page.getByRole("button", { name: "Kiểm tra hoàn tiền" }).click();
+  await expect(page.getByRole("alert")).toContainText("Chỉ hỗ trợ link HTTPS");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await link.fill("https://shopee.vn/demo-i.123.456");
+  await page.getByRole("button", { name: "Kiểm tra hoàn tiền" }).click();
+  const auth = page.getByRole("dialog");
+  await auth.getByRole("button", { name: "Dùng thử ngay" }).click();
+  await expect(auth).not.toBeVisible();
+  await expect(
+    page.getByText("Thông tin sản phẩm: Chưa xác định"),
+  ).toBeVisible();
+  await expect(page).toHaveTitle("Lá Cashback — Ứng dụng hoàn tiền");
+  await page.goto("/app#orders");
+  await expect(page).toHaveTitle("Đơn hàng của bạn · Lá Cashback");
+  await page.locator("summary").first().click();
+  await expect(
+    page.getByRole("list", { name: "Tiến trình đơn hàng" }).first(),
+  ).toBeVisible();
+  await page.goto("/khong-ton-tai");
+  await expect(
+    page.getByRole("heading", { name: "Không tìm thấy trang này" }),
+  ).toBeVisible();
 });
