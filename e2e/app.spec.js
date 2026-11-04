@@ -6,10 +6,10 @@ test("Desktop: mở React, đăng nhập, ví và giao diện sáng/tối", asyn
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.setViewportSize({ width: 1440, height: 1100 });
-  const response = await page.goto("/");
+  const response = await page.goto("/app");
   expect(response.status()).toBe(200);
   await expect(
-    page.getByRole("heading", { name: /Mua món bạn thích|Mua sắm/ }),
+    page.getByRole("heading", { name: "Tạo link hoàn tiền", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Đăng nhập", exact: true })
@@ -17,7 +17,7 @@ test("Desktop: mở React, đăng nhập, ví và giao diện sáng/tối", asyn
     .click();
   await page.getByRole("dialog").locator('button[type="submit"]').click();
   await expect(
-    page.getByRole("heading", { name: /Mua món bạn thích|Mua sắm/ }),
+    page.getByRole("heading", { name: "Tạo link hoàn tiền", exact: true }),
   ).toBeVisible();
   await expect(page.getByText("76.000 đ", { exact: true })).toBeVisible();
   mkdirSync("artifacts/screenshots", { recursive: true });
@@ -47,12 +47,12 @@ test("Điện thoại 390px: điều hướng, lọc ưu đãi, lưu deal và kh
 }) => {
   mkdirSync("artifacts/screenshots", { recursive: true });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+  await page.goto("/app");
   await expect(
     page.getByRole("navigation", { name: "Điều hướng điện thoại" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: /Mua món bạn thích|Mua sắm/ }),
+    page.getByRole("heading", { name: "Tạo link hoàn tiền", exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: "artifacts/screenshots/mobile-home.png",
@@ -76,7 +76,7 @@ test("Điện thoại 390px: điều hướng, lọc ưu đãi, lưu deal và kh
     .click();
   await page.getByRole("dialog").locator('button[type="submit"]').click();
   await expect(
-    page.getByRole("heading", { name: /Mua món bạn thích|Mua sắm/ }),
+    page.getByRole("heading", { name: "Tạo link hoàn tiền", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("navigation", { name: "Điều hướng điện thoại" })
@@ -121,7 +121,7 @@ test("Luồng React: đăng ký → link → đơn demo → quản trị duyệt
   browser,
 }) => {
   const email = "ui-" + Date.now() + "@demo.local";
-  await page.goto("/");
+  await page.goto("/app");
   await page
     .getByRole("button", { name: "Đăng nhập", exact: true })
     .first()
@@ -159,7 +159,7 @@ test("Luồng React: đăng ký → link → đơn demo → quản trị duyệt
   ).toBeVisible();
   const adminContext = await browser.newContext();
   const admin = await adminContext.newPage();
-  await admin.goto("http://127.0.0.1:3081/");
+  await admin.goto("http://127.0.0.1:3081/app");
   await admin
     .getByRole("banner")
     .getByRole("button", { name: "Đăng nhập", exact: true })
@@ -232,7 +232,7 @@ test("Luồng React: đăng ký → link → đơn demo → quản trị duyệt
 test("Quản trị: nhập JSON có lỗi từng dòng, trùng sự kiện và đơn chưa gán", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/app");
   await page
     .getByRole("button", { name: "Đăng nhập", exact: true })
     .first()

@@ -5,7 +5,7 @@ test("Community flows and wide-screen/mobile layouts", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.setViewportSize({ width: 2560, height: 1440 });
-  await page.goto("/");
+  await page.goto("/app");
   await page
     .getByRole("button", { name: "Đăng nhập", exact: true })
     .first()

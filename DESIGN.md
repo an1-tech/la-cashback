@@ -4,7 +4,7 @@ Implement the desktop and mobile image approved in chat: forest charcoal, pale l
 
 Reuse existing React components, API workflows, light/dark tokens and navigation. Home styles are in src/redesign.css. Desktop sidebar is 216px, home content uses a 2:1 discovery/orders split. Mobile uses five primary bottom destinations, a full-width action, two-column discovery, and stacks recent orders. Admin access remains available when authenticated as admin.
 
-Brand requirements override generic style rules: forest-tinted dark surfaces, lime action, botanical leaf, large two-line shopping heading. Use visible focus, 44px primary touch targets and reduced-motion support. No animation library is needed for this screen.
+Brand requirements override generic style rules: forest-tinted dark surfaces, lime action and botanical leaf. The large two-line shopping heading belongs to the public landing page at `/`. The application at `/app` uses short, functional titles and keeps the composer and filters near the top. Older `/#…` links still open the corresponding app pages. Use visible focus, 44px primary touch targets and reduced-motion support. No animation library is needed.
 
 Theme switching lives in the topbar next to the notifications and avatar at all widths. Copyright and demo version belong to the page footer after its content, never in the sidebar.
 

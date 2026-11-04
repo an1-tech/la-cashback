@@ -6,7 +6,7 @@ test("Public demo UI: admin password stays private", async ({ page }) => {
     const data = await response.json();
     await route.fulfill({ response, json: { ...data, publicDemo: true } });
   });
-  await page.goto("/");
+  await page.goto("/app");
   await page
     .getByRole("banner")
     .getByRole("button", { name: "Đăng nhập", exact: true })

@@ -14,6 +14,7 @@ import {
   DealArt,
 } from "./components";
 import { Admin } from "./pages/Admin";
+import { Landing } from "./pages/Landing";
 import {
   QuickActions,
   HomeCommunity,
@@ -77,7 +78,7 @@ function App() {
     return () => clearTimeout(timer);
   }, [toast]);
   const navigate = (value) => {
-    if (location.pathname === "/demo-shop") location.assign("/#" + value);
+    if (location.pathname === "/demo-shop") location.assign("/app#" + value);
     else {
       location.hash = value;
       setPage(value);
@@ -131,7 +132,7 @@ function App() {
     {
       home: "Trang chủ",
       orders: "Đơn hàng của bạn",
-      deals: "Khám phá ưu đãi",
+      deals: "Ưu đãi",
       wallet: "Số dư & rút tiền",
       profile: "Tài khoản của bạn",
       admin: "Không gian quản trị",
@@ -153,11 +154,8 @@ function App() {
         <aside className="sidebar">
           <a
             className="brand"
-            href="#home"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate("home");
-            }}
+            href="/"
+            aria-label="Lá Cashback, trang giới thiệu"
           >
             <span className="brand-mark">
               <Icon name="leaf" size={25} />
@@ -232,7 +230,11 @@ function App() {
             <div className="breadcrumb">
               <strong>{title}</strong>
             </div>
-            <a className="mobile-brand" href="/#home">
+            <a
+              className="mobile-brand"
+              href="/"
+              aria-label="Lá Cashback, trang giới thiệu"
+            >
               <Icon name="leaf" /> lá cashback
             </a>
             <div className="top-actions">
@@ -287,20 +289,14 @@ function App() {
           <main className="main-content">
             <div className="demo-notice">
               <Icon name="info" size={15} />
-              <span>
-                Bản trải nghiệm · Dữ liệu và thanh toán mô phỏng. Chưa kết nối
-                Shopee.
-              </span>
+              <span>Bản demo · Đơn hàng và thanh toán mô phỏng.</span>
               <button onClick={() => setModal("guide")}>
                 Tìm hiểu <Icon name="arrow" size={13} />
               </button>
             </div>
-            {!["home", "deals", "demo"].includes(page) && (
+            {!["home", "demo"].includes(page) && (
               <div className="page-heading">
-                <div>
-                  <span className="eyebrow">LÁ CASHBACK</span>
-                  <h1>{title}</h1>
-                </div>
+                <h1>{title}</h1>
                 {page === "admin" && <Badge>CHỈ QUẢN TRỊ VIÊN</Badge>}
               </div>
             )}
@@ -426,21 +422,7 @@ function Home() {
     <div className="home-dashboard">
       <QuickActions />
       <section className="shopping-intro" aria-labelledby="shopping-title">
-        <div className="botanical-mark" aria-hidden="true">
-          <Icon name="leaf" size={190} />
-        </div>
-        <h1 id="shopping-title">
-          <span className="desktop-title">
-            Mua món bạn thích.
-            <br />
-            <em>Nhận lại một chút vui.</em>
-          </span>
-          <span className="phone-title">
-            Mua sắm.
-            <br />
-            <em>Nhận lại.</em>
-          </span>
-        </h1>
+        <h1 id="shopping-title">Tạo link hoàn tiền</h1>
         <div className="composer-panel">
           <LinkBox />
         </div>
@@ -839,15 +821,6 @@ function Deals() {
   );
   return (
     <>
-      <div className="deals-heading">
-        <span className="eyebrow">CÓ LÁ, MUA SẮM THÊM VUI</span>
-        <h1>
-          Ưu đãi nhỏ.
-          <br />
-          <span>Niềm vui lớn.</span>
-        </h1>
-        <p>Gom những món đồ bạn cần, lưu những ưu đãi bạn thích.</p>
-      </div>
       <div className="filter-bar">
         <div className="search-input">
           <Icon name="search" />
@@ -1848,4 +1821,21 @@ function DemoShop() {
     </section>
   );
 }
-createRoot(document.getElementById("root")).render(<App />);
+function isLanding() {
+  return (
+    location.pathname === "/" &&
+    (!location.hash || location.hash.startsWith("#landing-"))
+  );
+}
+
+function Site() {
+  const [showLanding, setShowLanding] = useState(isLanding);
+  useEffect(() => {
+    const syncRoute = () => setShowLanding(isLanding());
+    window.addEventListener("hashchange", syncRoute);
+    return () => window.removeEventListener("hashchange", syncRoute);
+  }, []);
+  return showLanding ? <Landing /> : <App />;
+}
+
+createRoot(document.getElementById("root")).render(<Site />);

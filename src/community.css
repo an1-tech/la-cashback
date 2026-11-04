@@ -498,7 +498,7 @@ progress {
   }
   .wallet-overview {
     grid-column: 2;
-    align-self: end;
+    align-self: start;
   }
   .home-lower-grid {
     grid-column: 1;
@@ -536,9 +536,6 @@ progress {
   .home-community .guide-links {
     grid-template-columns: 1fr;
     gap: 8px;
-  }
-  .shopping-intro h1 {
-    font-size: 42px;
   }
   .home-lower-grid .discovery-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));

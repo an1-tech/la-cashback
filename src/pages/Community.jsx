@@ -252,7 +252,7 @@ function Post({ post: p, boot, mutate, setModal, setToast }) {
         <button
           className="text-button"
           onClick={() =>
-            copyText(location.origin + "/#feed?post=" + p.id, setToast)
+            copyText(location.origin + "/app#feed?post=" + p.id, setToast)
           }
         >
           <Icon name="external" size={16} />
@@ -404,7 +404,10 @@ export function MemberPage({ section }) {
                 <Field
                   label="Đường dẫn mời bạn bè"
                   value={
-                    location.origin + "/?ref=" + m.referral_code + "#referrals"
+                    location.origin +
+                    "/app?ref=" +
+                    m.referral_code +
+                    "#referrals"
                   }
                   readOnly
                 />
@@ -413,7 +416,7 @@ export function MemberPage({ section }) {
                   onClick={() =>
                     copyText(
                       location.origin +
-                        "/?ref=" +
+                        "/app?ref=" +
                         m.referral_code +
                         "#referrals",
                       setToast,
