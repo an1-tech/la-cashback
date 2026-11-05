@@ -188,8 +188,17 @@ test("Catalog: source switch, search, paging, detail and mobile/dark layout", as
   await page.locator(".catalog-detail summary").click();
   await expect(page.locator(".price-history-table")).toBeVisible();
   mkdirSync("artifacts/catalog", { recursive: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
   for (const width of [1440, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });
+    if (width < 761)
+      await expect
+        .poll(() =>
+          page
+            .locator(".sidebar")
+            .evaluate((element) => element.getBoundingClientRect().right),
+        )
+        .toBeLessThanOrEqual(0);
     for (const theme of ["light", "dark"]) {
       await page.evaluate((value) => {
         document.documentElement.dataset.theme = value;
