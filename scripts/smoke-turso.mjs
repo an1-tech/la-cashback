@@ -70,11 +70,22 @@ try {
   const initial = (await request("/bootstrap")).body;
   assert.equal(initial.storage, "turso");
   assert.equal(initial.ephemeralData, false);
-  const { response, body } = await request("/auth/demo", {
+  let sandboxFinished = false;
+  const sandboxRequest = request("/auth/demo", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: "{}",
+  }).finally(() => {
+    sandboxFinished = true;
   });
+  // The HTTP event loop must stay responsive during synchronous network seeding.
+  await setTimeout(10);
+  const health = await fetch(base + "/healthz", {
+    signal: AbortSignal.timeout(2000),
+  });
+  assert.equal(health.status, 200);
+  assert.equal(sandboxFinished, false);
+  const { response, body } = await sandboxRequest;
   const cookie = response.headers.get("set-cookie").split(";")[0];
   const headers = {
     Cookie: cookie,

@@ -33,7 +33,8 @@ import {
   adjustBalance,
 } from "./finance.js";
 import { demoProvider } from "./providers/demo.js";
-import { seedBuyerSamples } from "./seed.js";
+import { createSandboxAccount } from "./seed.js";
+import { createRemoteSandbox } from "./sandbox.js";
 import { communityRoutes } from "./community.js";
 const safeUser = (u) =>
   u && {
@@ -388,37 +389,9 @@ export function createApp(
       if (method === "POST" && path === "/api/auth/demo") {
         // Mỗi khách có một người mua riêng kèm dữ liệu mẫu, không đụng tài khoản chung.
         rateLimit(db, `demo-account:${ip}`, 5, 3600);
-        const admin = db
-          .prepare("SELECT id FROM users WHERE role='admin' LIMIT 1")
-          .get();
-        const policy = currentPolicy(db);
-        ensure(admin && policy, "Demo chưa sẵn sàng. Vui lòng thử lại.", 503);
-        const uid = id(),
-          tag = uid.slice(0, 8),
-          at = now();
-        // Một transaction cho cả tài khoản lẫn dữ liệu mẫu: lỗi ở bước nào cũng không để lại dữ liệu dở.
-        transaction(db, () => {
-          db.prepare("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?,?,?)").run(
-            uid,
-            `khach-${tag}@demo.local`,
-            "Khách trải nghiệm",
-            passwordHash(token()),
-            "user",
-            "active",
-            "Ngân hàng mô phỏng",
-            "DEMO-00001234",
-            "KHACH TRAI NGHIEM",
-            at,
-            at,
-          );
-          seedBuyerSamples(db, {
-            userId: uid,
-            actorId: admin.id,
-            policyId: policy.id,
-            at,
-            tag,
-          });
-        });
+        const uid = isRemoteDb(db)
+          ? await createRemoteSandbox()
+          : createSandboxAccount(db);
         const found = db.prepare("SELECT * FROM users WHERE id=?").get(uid);
         send({ user: safeUser(found), csrf: beginSession(uid) });
         return;

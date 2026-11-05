@@ -1,5 +1,5 @@
 import { transaction, now } from "./db.js";
-import { passwordHash } from "./security.js";
+import { passwordHash, token, ensure } from "./security.js";
 import {
   id,
   balances,
@@ -166,4 +166,40 @@ export function seedBuyerSamples(
     "DEMO-SEED-TRANSFER" + suffix.toUpperCase(),
     actorId,
   );
+}
+
+// Shared by the local route and the isolated Turso worker.
+export function createSandboxAccount(db) {
+  const admin = db
+    .prepare("SELECT id FROM users WHERE role='admin' LIMIT 1")
+    .get();
+  const policy = currentPolicy(db);
+  ensure(admin && policy, "Demo chưa sẵn sàng. Vui lòng thử lại.", 503);
+  const uid = id(),
+    tag = uid.slice(0, 8),
+    at = now();
+  // Một transaction cho cả tài khoản lẫn dữ liệu mẫu: lỗi ở bước nào cũng không để lại dữ liệu dở.
+  transaction(db, () => {
+    db.prepare("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?,?,?)").run(
+      uid,
+      `khach-${tag}@demo.local`,
+      "Khách trải nghiệm",
+      passwordHash(token()),
+      "user",
+      "active",
+      "Ngân hàng mô phỏng",
+      "DEMO-00001234",
+      "KHACH TRAI NGHIEM",
+      at,
+      at,
+    );
+    seedBuyerSamples(db, {
+      userId: uid,
+      actorId: admin.id,
+      policyId: policy.id,
+      at,
+      tag,
+    });
+  });
+  return uid;
 }
