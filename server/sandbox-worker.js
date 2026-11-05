@@ -1,11 +1,11 @@
 import { parentPort } from "node:worker_threads";
 import { openDb } from "./db.js";
-import { createSandboxAccount } from "./seed.js";
+import { createBatchedSandbox } from "./sandbox-copy.js";
 
 let db, result;
 try {
   db = openDb();
-  result = { uid: createSandboxAccount(db) };
+  result = { uid: createBatchedSandbox(db) };
 } catch (error) {
   result = {
     error: error.status

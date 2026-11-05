@@ -21,7 +21,7 @@ Lần đầu kết nối một database trống, ứng dụng tự chạy migrat
 - Đăng ký người dùng thử, tạo đơn và đối soát; ghi lại số dư.
 - Redeploy rồi đăng nhập lại: tài khoản, đơn và số dư còn nguyên.
 - CI chạy bộ nghiệp vụ bằng cả Node SQLite và driver libSQL. Docker smoke dùng libSQL server riêng, xóa/tạo lại container ứng dụng và kiểm tra dữ liệu, phiên cùng yêu cầu rút không ghi trùng.
-- Tạo tài khoản dùng thử trên Turso chạy ở worker riêng để không chặn HTTP và health check trong lúc khởi tạo nhiều giao dịch mẫu. Nút dùng thử có thể cần thời gian chờ; đăng ký/đăng nhập thông thường không tạo toàn bộ dữ liệu mẫu này.
+- Tạo tài khoản dùng thử trên Turso chạy ở worker riêng. Worker tạo dữ liệu bằng các quy tắc nghiệp vụ trong SQLite bộ nhớ, rồi chèn gộp vào Turso trong một transaction, giảm số lượt gọi mạng và không chặn HTTP/health check. Không sao chép dữ liệu của người mua khác.
 - Token hết hạn hoặc bị thu hồi: tạo token mới rồi cập nhật biến Render. Tài khoản và dữ liệu vẫn nằm trong database Turso.
 
 ## Sao lưu khi trình diễn
