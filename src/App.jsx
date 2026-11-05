@@ -68,9 +68,42 @@ export default function App() {
     [modal, setModal] = useState(null),
     [toast, setToast] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const sidebarRef = useRef(null),
+    menuButtonRef = useRef(null);
   const [mobile, setMobile] = useState(
     () => matchMedia("(max-width: 760px)").matches,
   );
+  useEffect(() => {
+    if (!mobile || !menuOpen) return;
+    const before = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const items = () =>
+      Array.from(
+        sidebarRef.current?.querySelectorAll(
+          "a[href], button:not(:disabled)",
+        ) || [],
+      );
+    items()[0]?.focus();
+    const trap = (e) => {
+      if (e.key !== "Tab") return;
+      const list = items(),
+        first = list[0],
+        last = list.at(-1);
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    };
+    window.addEventListener("keydown", trap);
+    return () => {
+      document.body.style.overflow = before;
+      window.removeEventListener("keydown", trap);
+      menuButtonRef.current?.focus();
+    };
+  }, [mobile, menuOpen]);
   useEffect(() => {
     const media = matchMedia("(max-width: 760px)");
     const resize = () => {
@@ -211,6 +244,11 @@ export default function App() {
           />
         )}
         <aside
+          ref={sidebarRef}
+          id="app-sidebar"
+          role={mobile && menuOpen ? "dialog" : undefined}
+          aria-modal={mobile && menuOpen ? true : undefined}
+          aria-label={mobile && menuOpen ? "Menu điều hướng" : undefined}
           className={"sidebar " + (menuOpen ? "is-open" : "")}
           inert={mobile && !menuOpen}
         >
@@ -251,11 +289,13 @@ export default function App() {
             ))}
           </nav>
         </aside>
-        <div className="workspace">
+        <div className="workspace" inert={mobile && menuOpen}>
           <header className="topbar">
             <button
+              ref={menuButtonRef}
               className="icon-button app-menu-button"
               aria-label="Mở menu điều hướng"
+              aria-controls="app-sidebar"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen(!menuOpen)}
             >
@@ -405,7 +445,11 @@ export default function App() {
           </main>
           <PageFooter />
         </div>
-        <nav className="bottom-nav" aria-label="Điều hướng điện thoại">
+        <nav
+          className="bottom-nav"
+          aria-label="Điều hướng điện thoại"
+          inert={mobile && menuOpen}
+        >
           {nav.map(([key, label, icon]) => (
             <button
               key={key}

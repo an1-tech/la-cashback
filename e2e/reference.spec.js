@@ -50,6 +50,14 @@ test("Menu điện thoại, banner và chuyển thẳng từ hồ sơ đến b�
   await page.goto("/app");
   const menu = page.getByRole("button", { name: "Mở menu điều hướng" });
   await menu.click();
+  const drawer = page.getByRole("dialog", { name: "Menu điều hướng" });
+  await expect(drawer.getByRole("link")).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(
+    drawer.getByRole("button", { name: "Phản hồi và góp ý", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(drawer.getByRole("link")).toBeFocused();
   await page
     .getByRole("navigation", { name: "Khám phá Lá" })
     .getByRole("button", { name: "Blog", exact: true })
