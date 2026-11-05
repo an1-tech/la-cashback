@@ -34,8 +34,6 @@ const startApp = (name = app, port = 3083) =>
     "TURSO_DATABASE_URL=http://127.0.0.1:8080",
     "--env",
     "TURSO_AUTH_TOKEN=ci-local",
-    "--env",
-    "CI_REPLICA_PROBE=true",
     "la-cashback:ci",
   );
 async function waitFor(url) {
@@ -88,27 +86,6 @@ try {
   assert.ok(
     body.user?.id,
     "sandbox user must be visible to the application replica",
-  );
-  const sessionProbe = await fetch("http://127.0.0.1:8080/v2/pipeline", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      requests: [
-        {
-          type: "execute",
-          stmt: {
-            sql: "SELECT (SELECT count(*) FROM sessions) AS sessions, (SELECT count(*) FROM sessions s JOIN users u ON u.id=s.user_id WHERE u.status='active') AS active_sessions",
-            args: [],
-            want_rows: true,
-          },
-        },
-        { type: "close" },
-      ],
-    }),
-  });
-  console.log(
-    "CI session persistence probe:",
-    JSON.stringify(await sessionProbe.json()),
   );
   const cookie = response.headers.get("set-cookie").split(";")[0];
   const headers = {

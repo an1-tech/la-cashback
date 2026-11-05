@@ -19,3 +19,7 @@ CI chạy nghiệp vụ với cả SQLite gốc và libSQL, trình duyệt, imag
 Trước tối ưu, một lần đo trên Render đã khởi động: bootstrap công khai khoảng 1,6 giây; browser đăng nhập người mua 5,58 giây, trang chủ sẵn sàng 21,53 giây, ví 3,39 giây. Đây là mẫu đo, không phải SLA. Bundle cũ 334,98KB JavaScript (gzip 98,42KB); bản tách tải landing dùng khoảng 249,8KB JavaScript (gzip 78,9KB), ứng dụng tải thêm chunk riêng. Ảnh mới dùng WebP, cache tĩnh; ảnh bên dưới tải lười.
 
 Đo lại trên bản triển khai sau CI để đối chiếu. Thời gian khởi động máy chủ miễn phí và khoảng cách mạng vẫn cần được phân biệt với thời gian xử lý API.
+
+Driver 0.5.29 được bọc truy vấn một dòng bằng cách đọc hết result cursor trước khi lấy dòng đầu, tránh giữ snapshot cũ qua lần đồng bộ tiếp theo. CI từng tái hiện tài khoản mới chưa hiện trong replica và đã xác minh bản sửa qua hai container độc lập. Tài khoản chưa đồng bộ không được cấp phiên thành công.
+
+Đo đối chiếu trước cập nhật bằng cùng script/browser, ba mẫu trên Render đang chạy: đăng nhập 7,263–7,671 giây; trang chủ đã đăng nhập 5,940–6,619 giây; mở ví 2,884–2,912 giây. Giá trị trung vị lần lượt 7,580 / 6,401 / 2,911 giây.

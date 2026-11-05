@@ -1333,7 +1333,7 @@ function Wallet() {
               <h2>
                 Từ đơn hàng
                 <br />
-                đến số dư khả dụng.
+                đến số dư khả dụng
               </h2>
               <ol>
                 <li>
