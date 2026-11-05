@@ -1,0 +1,183 @@
+.catalog-note {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.reference-deals .deal-label {
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.reference-deals .merchant,
+.reference-deals .merchant span {
+  font-size: 12px;
+}
+.catalog-note span {
+  display: block;
+}
+.product-reference {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.product-reference-main {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 18px;
+}
+.product-reference-main img,
+.catalog-card img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 12px;
+  background: var(--surface);
+}
+.product-reference h3 {
+  font-size: 17px;
+  line-height: 1.5;
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+.product-reference-main p {
+  margin: 5px 0;
+}
+.product-reference details {
+  margin-top: 12px;
+}
+.product-reference summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 12px 0;
+}
+.catalog-no-image {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  aspect-ratio: 1;
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 12px;
+  font-size: 12px;
+}
+.price-history label {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 180px);
+  align-items: center;
+  gap: 12px;
+}
+.price-history-table {
+  max-height: 300px;
+  overflow: auto;
+}
+.price-history table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  font-size: 14px;
+  border-collapse: collapse;
+}
+.price-history th,
+.price-history td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.price-history th:last-child,
+.price-history td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.catalog-search {
+  margin: 18px 0;
+}
+.catalog-search > label {
+  display: block;
+  margin-bottom: 8px;
+}
+.catalog-search > div {
+  display: flex;
+  gap: 10px;
+}
+.catalog-search input {
+  min-width: 0;
+  flex: 1;
+}
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.catalog-card {
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  min-width: 0;
+}
+.catalog-card h3 {
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 12px 0 0;
+  overflow-wrap: anywhere;
+}
+.catalog-card p {
+  margin: 8px 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.catalog-card small {
+  color: var(--muted);
+}
+.catalog-card button {
+  margin-top: auto;
+  padding-top: 14px;
+  min-height: 44px;
+  justify-content: start;
+}
+.catalog-pagination {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin: 24px 0;
+}
+.catalog-detail {
+  margin-top: 20px;
+  padding: 20px;
+}
+.catalog-offers > .section-heading {
+  margin-top: 20px;
+}
+@media (max-width: 1100px) {
+  .catalog-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .catalog-card {
+    padding: 10px;
+  }
+  .product-reference-main {
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .catalog-search > div {
+    flex-wrap: wrap;
+  }
+  .catalog-search input {
+    flex-basis: 180px;
+  }
+  .catalog-detail {
+    padding: 14px;
+  }
+  .catalog-pagination {
+    gap: 8px;
+  }
+}

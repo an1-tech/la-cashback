@@ -85,9 +85,13 @@ export function shopeeUrl(value) {
       !url.username &&
       !url.password &&
       !url.port &&
-      ["shopee.vn", "www.shopee.vn", "s.shopee.vn", "shp.ee"].includes(
-        url.hostname,
-      ),
+      [
+        "shopee.vn",
+        "www.shopee.vn",
+        "s.shopee.vn",
+        "shp.ee",
+        "vn.shp.ee",
+      ].includes(url.hostname),
     "Chỉ hỗ trợ link HTTPS từ shopee.vn, s.shopee.vn hoặc shp.ee.",
   );
   ensure(url.pathname !== "/", "Hãy dùng link sản phẩm cụ thể.");

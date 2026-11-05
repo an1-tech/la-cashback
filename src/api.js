@@ -57,7 +57,13 @@ export function currentPage() {
     return "deals";
   return location.hash.slice(1).split(/[?/]/)[0] || "home";
 }
-const allowedHosts = ["shopee.vn", "www.shopee.vn", "s.shopee.vn", "shp.ee"];
+const allowedHosts = [
+  "shopee.vn",
+  "www.shopee.vn",
+  "s.shopee.vn",
+  "shp.ee",
+  "vn.shp.ee",
+];
 // Kiểm tra sớm ở trình duyệt; máy chủ vẫn kiểm tra lại bằng shopeeUrl().
 export function shopeeLinkError(value) {
   const text = value.trim();
