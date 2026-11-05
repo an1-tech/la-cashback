@@ -419,6 +419,7 @@ export function createApp(
           : createSandboxAccount(db);
         syncDb(db); // The sandbox worker wrote through another connection.
         const found = db.prepare("SELECT * FROM users WHERE id=?").get(uid);
+        ensure(found, "Dữ liệu dùng thử chưa đồng bộ. Vui lòng thử lại.", 503);
         send({ user: safeUser(found), csrf: beginSession(uid) });
         return;
       }

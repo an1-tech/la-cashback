@@ -56,6 +56,14 @@ export function openDb(path = databaseLocation(), { replica = false } = {}) {
         readYourWrites: true,
       });
       replicas.add(db);
+      // Exhaust result cursors: a single-row cursor must not pin an old local
+      // read snapshot across a sync performed after another connection writes.
+      const prepare = db.prepare.bind(db);
+      db.prepare = (sql) => {
+        const statement = prepare(sql);
+        statement.get = (...args) => statement.all(...args)[0];
+        return statement;
+      };
       syncDb(db);
     } else
       db =
