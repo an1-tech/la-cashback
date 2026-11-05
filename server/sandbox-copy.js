@@ -38,12 +38,15 @@ export function createBatchedSandbox(target) {
         "admin",
         now(),
       );
-    const policyColumns = Object.keys(policy);
+    const policyColumns = local
+      .prepare("PRAGMA table_info(policies)")
+      .all()
+      .map((c) => c.name);
     local
       .prepare(
         `INSERT INTO policies (${policyColumns.join(",")}) VALUES (${policyColumns.map(() => "?").join(",")})`,
       )
-      .run(...Object.values(policy));
+      .run(...policyColumns.map((c) => policy[c]));
     // Reuse the tested financial rules rather than manufacture ledger entries.
     const uid = createSandboxAccount(local);
     const statements = [];
@@ -67,9 +70,11 @@ export function createBatchedSandbox(target) {
         .all(table === "audit_logs" ? actor.id : uid);
       for (const row of rows) {
         // Let the destination allocate ledger's global autoincrement IDs.
-        const columns = Object.keys(row).filter(
-          (c) => table !== "ledger" || c !== "id",
-        );
+        const columns = local
+          .prepare(`PRAGMA table_info(${table})`)
+          .all()
+          .map((c) => c.name)
+          .filter((c) => table !== "ledger" || c !== "id");
         statements.push(
           `INSERT INTO ${table} (${columns.join(",")}) VALUES (${columns.map((c) => literal(row[c])).join(",")});`,
         );
