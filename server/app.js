@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
-import { now, transaction } from "./db.js";
+import { now, transaction, isRemoteDb, isSqliteError } from "./db.js";
 import {
   AppError,
   ensure,
@@ -313,7 +313,8 @@ export function createApp(
           demo: true,
           publicDemo,
           // Trên hosting không có ổ đĩa bền vững, DB được tạo lại khi máy chủ khởi động lại.
-          ephemeralData: publicDemo,
+          ephemeralData: publicDemo && !isRemoteDb(db),
+          storage: isRemoteDb(db) ? "turso" : "sqlite",
           dataSince: db.prepare("SELECT MIN(created_at) AS at FROM users").get()
             .at,
           provider: "demo",
@@ -865,11 +866,7 @@ export function createApp(
               try {
                 return { line: index + 1, ...ingestReport(db, row, user.id) };
               } catch (error) {
-                if (
-                  !error.status &&
-                  !String(error.code).startsWith("ERR_SQLITE")
-                )
-                  throw error;
+                if (!error.status && !isSqliteError(error)) throw error;
                 return {
                   line: index + 1,
                   error: error.status
@@ -1064,7 +1061,7 @@ export function createApp(
       else if (error.code === "ERR_INVALID_ARG_TYPE")
         // Giá trị JSON sai kiểu (object, mảng...) không bind được vào SQLite.
         send({ error: "Dữ liệu gửi lên không đúng định dạng." }, 400);
-      else if (String(error.code).startsWith("ERR_SQLITE"))
+      else if (isSqliteError(error))
         send(
           {
             error:

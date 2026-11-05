@@ -35,6 +35,6 @@ Theo tài liệu Render, dịch vụ Free có thể ngủ khi không hoạt đ�
 
 Muốn lần mở đầu không phải chờ máy chủ thức dậy: dùng dịch vụ giám sát miễn phí (ví dụ UptimeRobot) gọi `/healthz` khoảng 10 phút một lần. Việc này giữ máy chủ chạy nhưng không làm dữ liệu bền vững khi redeploy.
 
-Muốn giữ dữ liệu dài hạn: chọn máy chủ có volume bền vững, ví dụ Render trả phí có disk gắn vào `/app/data` (cần tự duyệt chi phí trước khi bật). Không chạy nhiều instance cùng SQLite. Không sao chép DB đang ghi mà bỏ qua WAL. Không tắt `DEMO_MODE` để giả lập vận hành thật.
+Để giữ dữ liệu demo miễn phí, kết nối database libSQL trên Turso theo [docs/TURSO.md](TURSO.md). Khi có đủ hai biến Turso, dữ liệu được lưu ở dịch vụ đó và thông báo reset trong ứng dụng sẽ tắt. Khi không cấu hình Turso, SQLite trên Render Free vẫn có giới hạn mất dữ liệu như trên. Không chạy nhiều instance trong bản demo; không tắt `DEMO_MODE`.
 
 Tài liệu nền tảng: https://render.com/docs/free, https://render.com/docs/blueprint-spec, https://render.com/docs/disks.

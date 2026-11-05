@@ -1,5 +1,7 @@
 # Lá Cashback — MVP React
 
+Phạm vi đề án chỉ gồm nghiệp vụ mô phỏng. Không triển khai affiliate hoặc thanh toán thật. Có thể giữ dữ liệu miễn phí bằng [Turso](docs/TURSO.md); Render Free tiếp tục chạy ứng dụng.
+
 [![CI](https://github.com/an1-tech/la-cashback/actions/workflows/ci.yml/badge.svg)](https://github.com/an1-tech/la-cashback/actions/workflows/ci.yml)
 
 Ứng dụng Affiliate + Cashback tiếng Việt, ưu tiên điện thoại. **Demo học tập, chạy local hoặc triển khai online theo [hướng dẫn Render](docs/RENDER.md). Chưa kết nối Shopee hoặc ngân hàng. Không có tiền thật.** Không có API Shopee, tỷ lệ hoa hồng Shopee hoặc thời gian ghi nhận nào được giả định.
