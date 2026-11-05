@@ -18,7 +18,7 @@ npm run build
 npm start
 ```
 
-Mở <http://127.0.0.1:3080>. Bản ZIP bàn giao đã có `dist/`, có thể dùng ngay `npm start` với Node.js 24. Nếu clone từ GitHub, cần chạy `npm ci` và `npm run build` theo hướng dẫn trên vì `dist/` không được lưu trong Git. Cơ sở dữ liệu mặc định `data/cashback.sqlite`, được tạo và migration tự động khi khởi động. Seed chỉ chạy khi chưa có người dùng; không ghi đè dữ liệu cũ.
+Mở <http://127.0.0.1:3080>. Nếu dùng bản ZIP đã có `dist/`, vẫn chạy `npm ci` để cài driver backend trước `npm start`. Nếu clone từ GitHub, cần chạy `npm ci` và `npm run build` theo hướng dẫn trên vì `dist/` không được lưu trong Git. Cơ sở dữ liệu mặc định `data/cashback.sqlite`, được tạo và migration tự động khi khởi động. Seed chỉ chạy khi chưa có người dùng; không ghi đè dữ liệu cũ.
 
 Phát triển giao diện React với Vite:
 
@@ -122,7 +122,7 @@ Kiểm thử UI tự khởi động cổng **3081**, DB `:memory:` riêng; khôn
 
 ## Triển khai môi trường thử nghiệm
 
-Bản demo công khai đang chạy trên Render Free theo [docs/RENDER.md](docs/RENDER.md); dữ liệu ở đó được tạo lại mỗi khi máy chủ khởi động lại. Để tự triển khai ở nơi khác, có thể build ở CI (`npm ci && npm test && npm run build`), chuyển `dist/`, `server/`, `package.json` và cấu hình tới máy có Node.js 24; chạy `node server/index.js` dưới tài khoản riêng với volume dữ liệu bền vững. Backend không cần thư viện npm ngoài Node nếu đã có `dist/`.
+Bản demo công khai chạy trên Render Free theo [docs/RENDER.md](docs/RENDER.md). Khi cấu hình Turso, dữ liệu nằm ở database riêng; khi chỉ dùng SQLite local, dữ liệu có thể mất lúc restart/redeploy. Để tự triển khai ở nơi khác, có thể build ở CI (`npm ci && npm test && npm run build`), chuyển `dist/`, `server/`, `package.json` và cấu hình tới máy có Node.js 24; chạy `node server/index.js` dưới tài khoản riêng với volume dữ liệu bền vững. Backend cần `npm ci --omit=dev` để cài driver libSQL và các thư viện runtime, kể cả khi đã có `dist/`.
 
 Dockerfile đa giai đoạn đi kèm; chưa chạy Docker trong phiên bàn giao:
 

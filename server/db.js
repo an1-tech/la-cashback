@@ -69,10 +69,16 @@ export function openDb(path = databaseLocation()) {
   } catch (error) {
     db?.close();
     // Không khởi tạo DB local thay thế khi dịch vụ từ xa lỗi; tránh hai bộ dữ liệu khác nhau.
-    if (remote)
+    if (remote) {
+      const secret = process.env.TURSO_AUTH_TOKEN?.trim();
+      const detail = secret
+        ? String(error.message).replaceAll(secret, "[redacted]")
+        : String(error.message);
       throw new Error(
-        "Không thể mở hoặc migration Turso. Kiểm tra URL, token, trạng thái database và quyền đọc/ghi.",
+        "Không thể mở hoặc migration Turso. Kiểm tra URL, token, trạng thái database và quyền đọc/ghi. " +
+          detail,
       );
+    }
     throw error;
   }
 }

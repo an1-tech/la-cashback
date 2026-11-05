@@ -116,7 +116,7 @@ try {
 } catch (error) {
   for (const name of [app, source]) {
     try {
-      console.error(docker("logs", name));
+      execFileSync("docker", ["logs", name], { stdio: "inherit" });
     } catch {}
   }
   throw error;

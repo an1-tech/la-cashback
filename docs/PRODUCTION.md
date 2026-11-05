@@ -1,5 +1,7 @@
 # Điều kiện chuyển sang vận hành thật
 
+Tài liệu tham khảo ngoài phạm vi đề án. Theo phạm vi đã chốt, Lá chỉ trình diễn nghiệp vụ mô phỏng; không triển khai các hạng mục affiliate và thanh toán thật dưới đây.
+
 Phiên bàn giao **không tích hợp thật và không triển khai công khai**. Chưa có tài liệu/tài khoản affiliate để xác minh quyền hoặc mô hình cashback, vì vậy không thể tuyên bố Shopee hỗ trợ bất kỳ endpoint/cơ chế đối soát cụ thể nào.
 
 ## Thông tin cần chủ dự án cung cấp/xác minh

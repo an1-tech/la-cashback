@@ -1,6 +1,6 @@
 # Kiến trúc và hợp đồng nghiệp vụ
 
-React (trình duyệt) → HTTP JSON cùng origin → kiểm tra session/CSRF/quyền → nghiệp vụ → SQLite transaction. Module provider chỉ chuyển đổi dữ liệu bên ngoài thành hợp đồng nội bộ. Adapter hiện tại là demo và không có gọi mạng.
+React (trình duyệt) → HTTP JSON cùng origin → kiểm tra session/CSRF/quyền → nghiệp vụ → SQLite transaction (local hoặc libSQL từ xa trên Turso). Adapter mua hàng là demo; kết nối mạng tới Turso chỉ lưu dữ liệu, không tạo giao dịch mua hoặc thanh toán thật. Xem [cấu hình Turso](TURSO.md).
 
 ## Trạng thái và tài khoản
 
