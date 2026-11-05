@@ -235,6 +235,10 @@ export function Loading() {
 export function useData(path, version) {
   const [state, setState] = useState({ loading: true, data: null, error: "" });
   useEffect(() => {
+    if (!path) {
+      setState({ loading: false, data: null, error: "" });
+      return;
+    }
     const controller = new AbortController();
     let alive = true;
     setState((s) => ({ ...s, loading: !s.data, error: "" }));
@@ -253,7 +257,8 @@ export function useData(path, version) {
   return state;
 }
 export function DataState({ state, children }) {
-  if (state.loading) return <Loading />;
+  if (state.loading || (!state.error && state.data === null))
+    return <Loading />;
   if (state.error)
     return (
       <div className="alert error" role="alert">

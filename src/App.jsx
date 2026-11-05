@@ -53,6 +53,7 @@ import {
   PageFooter,
 } from "./pages/Reference";
 import "./reference.css";
+import { CatalogOffers, ProductReference } from "./pages/Catalog";
 const nav = [
   ["home", "Trang chủ", "home"],
   ["orders", "Đơn hàng", "bag"],
@@ -588,6 +589,12 @@ function RecentOrders() {
 const pendingLinkKey = "la-pending-link";
 function LinkBox({ initialUrl = "" }) {
   const inputId = useId();
+  const inspectRequest = useRef({ sequence: 0, controller: null });
+  const cancelInspection = () => {
+    inspectRequest.current.controller?.abort();
+    inspectRequest.current.sequence++;
+  };
+  useEffect(() => () => cancelInspection(), []);
   const { boot, mutate, setModal, setToast } = useApp();
   const [value, setValue] = useState(initialUrl),
     [checked, setChecked] = useState(null),
@@ -595,6 +602,10 @@ function LinkBox({ initialUrl = "" }) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const inspect = async (url) => {
+    cancelInspection();
+    const sequence = inspectRequest.current.sequence;
+    const controller = new AbortController();
+    inspectRequest.current.controller = controller;
     setBusy(true);
     setError("");
     try {
@@ -603,14 +614,21 @@ function LinkBox({ initialUrl = "" }) {
       const result = await api("/links/inspect", {
         method: "POST",
         body: { url },
+        signal: controller.signal,
       });
+      if (sequence !== inspectRequest.current.sequence) return;
       const click = await mutate("/clicks", { url: result.url });
+      if (sequence !== inspectRequest.current.sequence) return;
       setChecked(result);
       setCreated(click);
     } catch (e) {
-      setError(e.message);
+      if (
+        sequence === inspectRequest.current.sequence &&
+        e.name !== "AbortError"
+      )
+        setError(e.message);
     } finally {
-      setBusy(false);
+      if (sequence === inspectRequest.current.sequence) setBusy(false);
     }
   };
   const check = (e) => {
@@ -665,6 +683,8 @@ function LinkBox({ initialUrl = "" }) {
             placeholder="https://shopee.vn/..."
             value={value}
             onChange={(e) => {
+              cancelInspection();
+              setBusy(false);
               setValue(e.target.value);
               setChecked(null);
               setCreated(null);
@@ -678,6 +698,8 @@ function LinkBox({ initialUrl = "" }) {
             onClick={async () => {
               try {
                 const text = await navigator.clipboard.readText();
+                cancelInspection();
+                setBusy(false);
                 setValue(text);
                 setChecked(null);
                 setCreated(null);
@@ -739,16 +761,26 @@ function LinkBox({ initialUrl = "" }) {
               <Icon name="bag" />
             </span>
             <div>
-              <strong>Thông tin sản phẩm: Chưa xác định</strong>
+              <strong>
+                {checked.product?.title || "Thông tin sản phẩm: Chưa xác định"}
+              </strong>
               <p>
                 Tiền hoàn dự kiến: <b>Chưa xác định</b>
               </p>
               <small>{checked.message}</small>
+              {checked.productError && (
+                <p className="catalog-note" role="status">
+                  {checked.productError}
+                </p>
+              )}
             </div>
             <button className="button primary" onClick={buy} disabled={busy}>
               Mua hàng nhận hoàn tiền <Icon name="external" size={15} />
             </button>
           </div>
+          {checked.product && (
+            <ProductReference key={checked.product.itemId} data={checked} />
+          )}
         </>
       )}
     </div>
@@ -761,7 +793,7 @@ function DealCard({ deal, index }) {
   return (
     <article className="deal-card">
       <div className={"deal-picture " + deal.accent}>
-        <span className="deal-label">ƯU ĐÃI MINH HỌA</span>
+        <span className="deal-label">Ưu đãi minh họa</span>
         <button
           className={"save-button " + (deal.saved ? "saved" : "")}
           aria-label={deal.saved ? "Bỏ lưu ưu đãi" : "Lưu ưu đãi"}
@@ -833,6 +865,7 @@ function DealCard({ deal, index }) {
 }
 function Deals() {
   const { boot } = useApp();
+  const [source, setSource] = useState("demo");
   const [q, setQ] = useState(
       () => new URLSearchParams(location.search).get("search") || "",
     ),
@@ -858,97 +891,125 @@ function Deals() {
     deals.sort((a, b) => a.title.localeCompare(b.title, "vi"));
   return (
     <div className="reference-deals">
-      <div className="search-input">
-        <Icon name="search" />
-        <input
-          aria-label="Tìm ưu đãi"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Nhập tên sản phẩm, ưu đãi hoặc mã giảm giá…"
-        />
-      </div>
-      <div className="tabs deal-mode-tabs">
+      <div className="tabs" aria-label="Nguồn ưu đãi">
         <button
-          className={!saved ? "active" : ""}
-          onClick={() => setSaved(false)}
+          className={source === "demo" ? "active" : ""}
+          aria-pressed={source === "demo"}
+          onClick={() => setSource("demo")}
         >
-          Deal hời
+          Ưu đãi minh họa
         </button>
         <button
-          className={saved ? "active" : ""}
-          onClick={() => setSaved(true)}
+          className={source === "catalog" ? "active" : ""}
+          aria-pressed={source === "catalog"}
+          onClick={() => setSource("catalog")}
         >
-          Đã lưu
+          Dữ liệu Shopee tham khảo
         </button>
       </div>
-      <div className="tabs deal-sort-tabs" aria-label="Sắp xếp ưu đãi">
-        {[
-          ["relevance", "Liên quan nhất"],
-          ["expiry", "Sắp hết hạn"],
-          ["title", "Tên A đến Z"],
-        ].map(([v, t]) => (
-          <button
-            key={v}
-            className={sort === v ? "active" : ""}
-            onClick={() => setSort(v)}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-      <div className="deal-browser">
-        <aside className="panel deal-filters">
-          <h2>Bộ lọc</h2>
-          <h3>Danh mục</h3>
-          <div className="tabs deal-category-list">
-            {categories.map((c) => (
+      {source === "catalog" ? (
+        <CatalogOffers />
+      ) : (
+        <>
+          <div className="search-input">
+            <Icon name="search" />
+            <input
+              aria-label="Tìm ưu đãi"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Nhập tên sản phẩm, ưu đãi hoặc mã giảm giá…"
+            />
+          </div>
+          <div className="tabs deal-mode-tabs">
+            <button
+              className={!saved ? "active" : ""}
+              onClick={() => setSaved(false)}
+            >
+              Deal hời
+            </button>
+            <button
+              className={saved ? "active" : ""}
+              onClick={() => setSaved(true)}
+            >
+              Đã lưu
+            </button>
+          </div>
+          <div className="tabs deal-sort-tabs" aria-label="Sắp xếp ưu đãi">
+            {[
+              ["relevance", "Liên quan nhất"],
+              ["expiry", "Sắp hết hạn"],
+              ["title", "Tên A đến Z"],
+            ].map(([v, t]) => (
               <button
-                key={c}
-                className={category === c ? "active" : ""}
-                onClick={() => setCategory(c)}
+                key={v}
+                className={sort === v ? "active" : ""}
+                onClick={() => setSort(v)}
               >
-                {c}
+                {t}
               </button>
             ))}
           </div>
-          <label className="check-label">
-            <input
-              type="checkbox"
-              checked={saved}
-              onChange={(e) => setSaved(e.target.checked)}
-            />
-            Ưu đãi đã lưu
-          </label>
-          <button
-            className="button"
-            onClick={() => {
-              setQ("");
-              setCategory("Tất cả");
-              setSaved(false);
-              setSort("relevance");
-            }}
-          >
-            Xóa bộ lọc
-          </button>
-          <p className="microcopy">
-            Nội dung minh họa cho đề án, chưa áp dụng khi mua sắm thật
-          </p>
-        </aside>
-        <section>
-          <p className="deal-result-count">{deals.length} ưu đãi minh họa</p>
-          {deals.length ? (
-            <div className="deal-grid">
-              {deals.map((d) => (
-                <DealCard key={d.id} deal={d} index={boot.deals.indexOf(d)} />
-              ))}
-            </div>
-          ) : (
-            <Empty title="Chưa tìm thấy ưu đãi">
-              Thử từ khóa khác hoặc thay đổi bộ lọc của bạn.
-            </Empty>
-          )}
-        </section>
-      </div>
+          <div className="deal-browser">
+            <aside className="panel deal-filters">
+              <h2>Bộ lọc</h2>
+              <h3>Danh mục</h3>
+              <div className="tabs deal-category-list">
+                {categories.map((c) => (
+                  <button
+                    key={c}
+                    className={category === c ? "active" : ""}
+                    onClick={() => setCategory(c)}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+              <label className="check-label">
+                <input
+                  type="checkbox"
+                  checked={saved}
+                  onChange={(e) => setSaved(e.target.checked)}
+                />
+                Ưu đãi đã lưu
+              </label>
+              <button
+                className="button"
+                onClick={() => {
+                  setQ("");
+                  setCategory("Tất cả");
+                  setSaved(false);
+                  setSort("relevance");
+                }}
+              >
+                Xóa bộ lọc
+              </button>
+              <p className="microcopy">
+                Nội dung minh họa cho đề án, chưa áp dụng khi mua sắm thật
+              </p>
+            </aside>
+            <section>
+              <p className="deal-result-count">
+                {deals.length} ưu đãi minh họa
+              </p>
+              {deals.length ? (
+                <div className="deal-grid">
+                  {deals.map((d) => (
+                    <DealCard
+                      key={d.id}
+                      deal={d}
+                      index={boot.deals.indexOf(d)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <Empty title="Chưa tìm thấy ưu đãi">
+                  Thử từ khóa khác hoặc thay đổi bộ lọc của bạn.
+                </Empty>
+              )}
+            </section>
+          </div>
+        </>
+      )}
     </div>
   );
 }

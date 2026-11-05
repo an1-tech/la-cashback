@@ -34,6 +34,8 @@ import {
   adjustBalance,
 } from "./finance.js";
 import { demoProvider } from "./providers/demo.js";
+import { createAddLiveTag } from "./providers/addlivetag.js";
+import { catalogRoutes } from "./catalog.js";
 import { createSandboxAccount } from "./seed.js";
 import { createRemoteSandbox } from "./sandbox.js";
 import { communityRoutes } from "./community.js";
@@ -103,6 +105,7 @@ export function createApp(
     secureCookie = false,
     publicDemo = false,
     staticDir = resolve("dist"),
+    catalog = createAddLiveTag(),
   } = {},
 ) {
   return createServer(async (req, res) => {
@@ -112,7 +115,7 @@ export function createApp(
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.susercontent.com https://cf.shopee.vn; connect-src 'self'; manifest-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
     );
     if (secureCookie)
       res.setHeader(
@@ -310,6 +313,18 @@ export function createApp(
         return csrf;
       };
       const ip = req.socket.remoteAddress || "local";
+      if (
+        await catalogRoutes({
+          service: catalog,
+          path,
+          method,
+          body,
+          url,
+          needUser,
+          send,
+        })
+      )
+        return;
       if (method === "GET" && path === "/api/bootstrap") {
         if (user) releaseDueFunds(db, user.id);
         const deals = db
@@ -332,6 +347,7 @@ export function createApp(
           dataSince: db.prepare("SELECT MIN(created_at) AS at FROM users").get()
             .at,
           provider: "demo",
+          catalog: catalog.capabilities,
           user: safeUser(user),
           csrf: user?.csrf || null,
           policy: currentPolicy(db),
@@ -479,7 +495,26 @@ export function createApp(
       }
       if (method === "POST" && path === "/api/links/inspect") {
         rateLimit(db, `inspect:${user.id}`, 40, 60);
-        send(demoProvider.inspect(body.url));
+        const result = demoProvider.inspect(body.url);
+        if (catalog.capabilities.configured) {
+          try {
+            const data = await catalog.inspect(body.url);
+            send({
+              ...result,
+              ...data,
+              url: data.product.url || result.url,
+              estimate: null,
+            });
+          } catch (error) {
+            // Product-data outages must not break the existing simulated purchase flow.
+            send({
+              ...result,
+              productError: error.message,
+              message:
+                "Chưa tải được thông tin tham khảo. Bạn vẫn có thể dùng cửa hàng mô phỏng.",
+            });
+          }
+        } else send(result);
         return;
       }
       if (method === "POST" && path === "/api/clicks") {
@@ -1039,6 +1074,8 @@ export function createApp(
       }
       throw new AppError("Không tìm thấy chức năng.", 404);
     } catch (error) {
+      if (error.retryAfter)
+        res.setHeader("Retry-After", String(error.retryAfter));
       if (error.status)
         send(
           error.reason
