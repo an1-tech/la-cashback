@@ -192,7 +192,7 @@ test("Luồng React: đăng ký → link → đơn demo → quản trị duyệt
   await expect(admin.getByRole("dialog")).not.toBeVisible();
   await page
     .getByRole("navigation", { name: "Điều hướng chính" })
-    .getByRole("button", { name: "Cá nhân", exact: true })
+    .getByRole("button", { name: "Hồ sơ", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Phương thức nhận tiền", exact: true })
@@ -205,10 +205,8 @@ test("Luồng React: đăng ký → link → đơn demo → quản trị duyệt
   await expect(
     page.getByRole("status").filter({ hasText: "Thao tác thành công." }),
   ).toBeVisible();
-  await page
-    .getByRole("navigation", { name: "Điều hướng chính" })
-    .getByRole("button", { name: "Số dư", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Mở tài khoản", exact: true }).click();
+  await page.getByRole("button", { name: "Rút tiền", exact: true }).click();
   await page.getByLabel("Số tiền (VND)").fill("50000");
   await page.getByRole("button", { name: "Gửi yêu cầu rút mô phỏng" }).click();
   await expect(

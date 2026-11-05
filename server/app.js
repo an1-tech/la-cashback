@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
-import { now, transaction, isRemoteDb, isSqliteError } from "./db.js";
+import { now, transaction, isRemoteDb, isSqliteError, syncDb } from "./db.js";
 import {
   AppError,
   ensure,
@@ -24,6 +24,7 @@ import {
   balances,
   currentPolicy,
   releaseFunds,
+  releaseDueFunds,
   audit,
   ingestReport,
   resolveUnmatched,
@@ -105,6 +106,7 @@ export function createApp(
   } = {},
 ) {
   return createServer(async (req, res) => {
+    const started = performance.now();
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Referrer-Policy", "no-referrer");
     res.setHeader("X-Frame-Options", "DENY");
@@ -118,11 +120,19 @@ export function createApp(
         "max-age=31536000; includeSubDomains",
       );
     const send = (data, status = 200) => {
+      res.setHeader(
+        "Server-Timing",
+        `app;dur=${(performance.now() - started).toFixed(1)}`,
+      );
       res.writeHead(status, {
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": "no-store",
       });
-      res.end(JSON.stringify(data));
+      res.end(
+        JSON.stringify(data, (key, value) =>
+          key === "_metadata" ? undefined : value,
+        ),
+      );
     };
     try {
       const url = new URL(req.url, "http://localhost");
@@ -217,6 +227,9 @@ export function createApp(
           "Nội dung phải là object.",
         );
       }
+      // Pull one snapshot, then serve all read queries from local pages.
+      // Writes and write-transaction reads still go to the Turso primary.
+      syncDb(db);
       const sessionToken = (req.headers.cookie || "")
         .split(";")
         .map((s) => s.trim())
@@ -298,7 +311,7 @@ export function createApp(
       };
       const ip = req.socket.remoteAddress || "local";
       if (method === "GET" && path === "/api/bootstrap") {
-        if (user) transaction(db, () => releaseFunds(db, user.id));
+        if (user) releaseDueFunds(db, user.id);
         const deals = db
           .prepare(
             "SELECT * FROM deals WHERE active=1 AND expires_at>? ORDER BY rowid",
@@ -392,7 +405,9 @@ export function createApp(
         const uid = isRemoteDb(db)
           ? await createRemoteSandbox()
           : createSandboxAccount(db);
+        syncDb(db); // The sandbox worker wrote through another connection.
         const found = db.prepare("SELECT * FROM users WHERE id=?").get(uid);
+        ensure(found, "Dữ liệu dùng thử chưa đồng bộ. Vui lòng thử lại.", 503);
         send({ user: safeUser(found), csrf: beginSession(uid) });
         return;
       }
@@ -547,7 +562,7 @@ export function createApp(
       }
       if (method === "GET" && path === "/api/wallet") {
         needUser();
-        transaction(db, () => releaseFunds(db, user.id));
+        releaseDueFunds(db, user.id);
         send({
           balances: balances(db, user.id),
           withdrawals: db

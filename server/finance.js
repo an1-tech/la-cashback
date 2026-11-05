@@ -98,6 +98,19 @@ export function releaseFunds(db, userId) {
     db.prepare("UPDATE orders SET released=1 WHERE id=?").run(order.id);
   }
 }
+// Reads normally need no write transaction. The transaction below still
+// rechecks eligibility against the primary before posting any money.
+export function releaseDueFunds(db, userId) {
+  if (
+    db
+      .prepare(
+        "SELECT 1 FROM orders WHERE user_id=? AND status='approved' AND released=0 AND available_at<=? LIMIT 1",
+      )
+      .get(userId, now())
+  ) {
+    transaction(db, () => releaseFunds(db, userId));
+  }
+}
 function normalizedReport(raw) {
   ensure(
     raw && typeof raw === "object" && !Array.isArray(raw),

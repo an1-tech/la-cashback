@@ -3,9 +3,14 @@ import Libsql from "libsql";
 import { mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 export const now = () => new Date().toISOString();
 const remoteDatabases = new WeakSet();
+const replicas = new WeakSet();
 export const isRemoteDb = (db) => remoteDatabases.has(db);
+export function syncDb(db) {
+  if (replicas.has(db)) db.sync();
+}
 export const isSqliteError = (error) =>
   /^(ERR_SQLITE|SQLITE_)/.test(String(error.code));
 export function databaseLocation(env = process.env) {
@@ -32,19 +37,42 @@ export function databaseLocation(env = process.env) {
   }
   return env.DATABASE_PATH || "./data/cashback.sqlite";
 }
-export function openDb(path = databaseLocation()) {
+export function openDb(path = databaseLocation(), { replica = false } = {}) {
   const remote = /^(libsql|https?):\/\//.test(path);
   if (!remote && path !== ":memory:")
     mkdirSync(dirname(resolve(path)), { recursive: true });
   let db;
   try {
-    db =
-      remote || process.env.SQLITE_DRIVER === "libsql"
-        ? new Libsql(
-            path,
-            remote ? { authToken: process.env.TURSO_AUTH_TOKEN?.trim() } : {},
-          )
-        : new DatabaseSync(path);
+    if (remote && replica) {
+      const key = createHash("sha256").update(path).digest("hex").slice(0, 16);
+      const cache = resolve(
+        dirname(process.env.DATABASE_PATH || "./data/cashback.sqlite"),
+        `replica-${key}.sqlite`,
+      );
+      mkdirSync(dirname(cache), { recursive: true });
+      db = new Libsql(cache, {
+        syncUrl: path,
+        authToken: process.env.TURSO_AUTH_TOKEN?.trim(),
+        readYourWrites: true,
+      });
+      replicas.add(db);
+      // Exhaust result cursors: a single-row cursor must not pin an old local
+      // read snapshot across a sync performed after another connection writes.
+      const prepare = db.prepare.bind(db);
+      db.prepare = (sql) => {
+        const statement = prepare(sql);
+        statement.get = (...args) => statement.all(...args)[0];
+        return statement;
+      };
+      syncDb(db);
+    } else
+      db =
+        remote || process.env.SQLITE_DRIVER === "libsql"
+          ? new Libsql(
+              path,
+              remote ? { authToken: process.env.TURSO_AUTH_TOKEN?.trim() } : {},
+            )
+          : new DatabaseSync(path);
     if (remote) remoteDatabases.add(db);
     db.exec(
       remote

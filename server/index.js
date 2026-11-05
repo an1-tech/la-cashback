@@ -22,7 +22,7 @@ if (publicDemo && process.env.COOKIE_SECURE !== "true")
   throw new Error(
     "PUBLIC_DEMO cần COOKIE_SECURE=true và HTTPS ở reverse proxy.",
   );
-const db = openDb();
+const db = openDb(undefined, { replica: true });
 seed(db, { adminPassword });
 if (
   publicDemo &&
