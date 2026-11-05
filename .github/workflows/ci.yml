@@ -35,6 +35,11 @@ jobs:
       - name: Kiểm thử nghiệp vụ và API
         run: npm test
 
+      - name: Kiểm thử nghiệp vụ và API với driver libSQL
+        run: npm test
+        env:
+          SQLITE_DRIVER: libsql
+
       - name: Build giao diện
         run: npm run build
 
@@ -74,6 +79,8 @@ jobs:
             --env DEMO_ADMIN_PASSWORD la-cashback:ci
       - name: Kiểm tra HTTP, dữ liệu và tài sản trong container
         run: node scripts/smoke-container.mjs http://127.0.0.1:3082
+      - name: Kiểm tra Turso và dữ liệu qua thay mới container
+        run: node scripts/smoke-turso.mjs
       - name: Log container khi lỗi
         if: failure()
         run: docker logs la-cashback-ci
