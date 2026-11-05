@@ -243,6 +243,18 @@ export function createApp(
             .get(hash(sessionToken), now())
         : null;
       const user = session?.status === "active" ? session : null;
+      if (process.env.CI_REPLICA_PROBE === "true" && sessionToken && !user) {
+        console.log("CI replica session probe", {
+          hasSession: !!session,
+          status: session?.status,
+          sessions: db.prepare("SELECT count(*) AS n FROM sessions").get().n,
+          activeSessions: db
+            .prepare(
+              "SELECT count(*) AS n FROM sessions s JOIN users u ON u.id=s.user_id WHERE u.status='active'",
+            )
+            .get().n,
+        });
+      }
       const needUser = () => {
         // Chỉ lỗi này mới nghĩa là hết phiên; 401 khác (sai mật khẩu xác nhận) không đăng xuất giao diện.
         if (!user)
