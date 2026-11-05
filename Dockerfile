@@ -10,6 +10,7 @@ RUN npm prune --omit=dev
 
 FROM node:24-slim
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 ENV HOST=0.0.0.0 PORT=3080 DEMO_MODE=true DATABASE_PATH=/app/data/cashback.sqlite
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
