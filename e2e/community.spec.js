@@ -139,6 +139,7 @@ test("Logout is visible in the account overview and ends the session", async ({
       fullPage: true,
     });
     await logout.click();
+    await expect(page).toHaveURL(/#home$/);
     await expect(
       page.getByRole("button", { name: "Mở tài khoản" }),
     ).toHaveCount(0);

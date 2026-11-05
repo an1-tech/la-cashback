@@ -10,19 +10,20 @@ const docker = (...args) =>
     stdio: ["ignore", "pipe", "pipe"],
   });
 const app = "la-turso-app-ci",
+  replicaApp = "la-turso-replica-ci",
   source = "la-turso-source-ci";
 const base = "http://127.0.0.1:3083";
 process.env.DEMO_ADMIN_PASSWORD = randomBytes(24).toString("hex");
-const startApp = () =>
+const startApp = (name = app, port = 3083) =>
   docker(
     "run",
     "--detach",
     "--name",
-    app,
+    name,
     "--network",
     "host",
     "--env",
-    "PORT=3083",
+    `PORT=${port}`,
     "--env",
     "PUBLIC_DEMO=true",
     "--env",
@@ -45,8 +46,8 @@ async function waitFor(url) {
   }
   throw new Error("Server did not become ready: " + url);
 }
-async function request(path, options = {}) {
-  const response = await fetch(base + "/api" + path, {
+async function request(path, options = {}, origin = base) {
+  const response = await fetch(origin + "/api" + path, {
     signal: AbortSignal.timeout(30000),
     ...options,
   });
@@ -117,18 +118,86 @@ try {
     (await request("/wallet", { headers })).body.balances,
     after.balances,
   );
+  // A separate app has its own local replica. It must see fresh sessions and
+  // serialize withdrawals on the primary, even if both replicas read 76,000.
+  startApp(replicaApp, 3084);
+  const second = "http://127.0.0.1:3084";
+  await waitFor(second + "/healthz");
+  const fresh = await request("/auth/demo", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+  const freshHeaders = {
+    Cookie: fresh.response.headers.get("set-cookie").split(";")[0],
+    "Content-Type": "application/json",
+    "X-CSRF-Token": fresh.body.csrf,
+  };
+  assert.equal(
+    (await request("/bootstrap", { headers: freshHeaders }, second)).body.user
+      .id,
+    fresh.body.user.id,
+  );
+  const attempts = await Promise.all(
+    [base, second].map((origin, i) =>
+      fetch(origin + "/api/withdrawals", {
+        method: "POST",
+        headers: freshHeaders,
+        body: JSON.stringify({
+          amount: 70000,
+          requestKey: "replica-race-" + i,
+        }),
+        signal: AbortSignal.timeout(30000),
+      }),
+    ),
+  );
+  assert.deepEqual(attempts.map((r) => r.status).sort(), [200, 400]);
+  const raceWallet = (
+    await request("/wallet", { headers: freshHeaders }, second)
+  ).body;
+  assert.equal(raceWallet.balances.available, 6000);
+  assert.equal(raceWallet.balances.held, 70000);
+  assert.equal(
+    raceWallet.withdrawals.filter((w) => w.amount === 70000).length,
+    1,
+  );
+  const admin = await request("/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: "admin@demo.local",
+      password: process.env.DEMO_ADMIN_PASSWORD,
+    }),
+  });
+  await request("/admin/users", {
+    method: "PATCH",
+    headers: {
+      Cookie: admin.response.headers.get("set-cookie").split(";")[0],
+      "Content-Type": "application/json",
+      "X-CSRF-Token": admin.body.csrf,
+    },
+    body: JSON.stringify({ id: fresh.body.user.id, status: "blocked" }),
+  });
+  const blocked = await fetch(second + "/api/wallet", {
+    headers: freshHeaders,
+  });
+  assert.equal(
+    blocked.status,
+    401,
+    "revoked sessions must not remain usable on another replica",
+  );
   console.log(
     "Turso smoke passed: remote migrations, nested seed transactions, sessions, orders, wallet and idempotency survive app replacement",
   );
 } catch (error) {
-  for (const name of [app, source]) {
+  for (const name of [app, replicaApp, source]) {
     try {
       execFileSync("docker", ["logs", name], { stdio: "inherit" });
     } catch {}
   }
   throw error;
 } finally {
-  for (const name of [app, source]) {
+  for (const name of [app, replicaApp, source]) {
     try {
       docker("rm", "--force", name);
     } catch {}

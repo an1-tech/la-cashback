@@ -235,9 +235,10 @@ export function Loading() {
 export function useData(path, version) {
   const [state, setState] = useState({ loading: true, data: null, error: "" });
   useEffect(() => {
+    const controller = new AbortController();
     let alive = true;
     setState((s) => ({ ...s, loading: !s.data, error: "" }));
-    api(path)
+    api(path, { signal: controller.signal })
       .then((data) => alive && setState({ loading: false, data, error: "" }))
       .catch(
         (error) =>
@@ -246,6 +247,7 @@ export function useData(path, version) {
       );
     return () => {
       alive = false;
+      controller.abort();
     };
   }, [path, version]);
   return state;

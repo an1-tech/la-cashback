@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { EditorialArt } from "./Reference";
 import { useApp } from "../context";
 import { money, date } from "../api";
 import {
@@ -29,11 +30,10 @@ export function QuickActions() {
   return (
     <nav className="quick-actions" aria-label="Tiện ích của Lá">
       {[
-        ["links", "Tạo link", "link"],
-        ["feed", "Bảng tin", "feed"],
-        ["checkin", "Điểm danh", "calendar"],
+        ["orders", "Lịch sử đơn hàng", "bag"],
         ["referrals", "Giới thiệu", "users"],
-        ["ranking", "Xếp hạng", "trophy"],
+        ["ranking", "Bảng xếp hạng", "trophy"],
+        ["checkin", "Điểm danh", "calendar"],
       ].map(([key, label, icon]) => (
         <button
           key={key}
@@ -45,7 +45,6 @@ export function QuickActions() {
         >
           <Icon name={icon} />
           <span>{label}</span>
-          <Icon name="arrow" size={14} />
         </button>
       ))}
     </nav>
@@ -127,7 +126,12 @@ export function Feed() {
                   .includes(query.toLocaleLowerCase("vi")),
             );
             return (
-              <div className="feed-grid">
+              <div
+                className={
+                  "feed-grid " +
+                  (!query && category === "Tất cả" ? "with-pins" : "")
+                }
+              >
                 {filtered.length ? (
                   filtered.map((p) => (
                     <Post
@@ -209,9 +213,19 @@ function Post({ post: p, boot, mutate, setModal, setToast }) {
     [busy, setBusy] = useState(false);
   const highlighted =
     new URLSearchParams(location.hash.split("?")[1]).get("post") === p.id;
+  const previewLength = p.pinned ? 110 : 260;
+  useEffect(() => {
+    if (!highlighted) return;
+    setExpanded(true);
+    document.getElementById("post-" + p.id)?.scrollIntoView({ block: "start" });
+  }, [highlighted, p.id]);
   return (
     <article
-      className={"panel feed-post " + (highlighted ? "highlighted" : "")}
+      className={
+        "panel feed-post " +
+        (p.pinned ? "pinned-post " : "") +
+        (highlighted ? "highlighted" : "")
+      }
       id={"post-" + p.id}
     >
       <div className="post-meta">
@@ -223,9 +237,11 @@ function Post({ post: p, boot, mutate, setModal, setToast }) {
       <small className="muted">{date(p.created_at)}</small>
       <h2>{p.title}</h2>
       <p className="post-body">
-        {expanded || p.body.length <= 260 ? p.body : p.body.slice(0, 260) + "…"}
+        {expanded || p.body.length <= previewLength
+          ? p.body
+          : p.body.slice(0, previewLength) + "…"}
       </p>
-      {p.body.length > 260 && (
+      {p.body.length > previewLength && (
         <button
           className="text-button"
           aria-expanded={expanded}
@@ -234,6 +250,7 @@ function Post({ post: p, boot, mutate, setModal, setToast }) {
           {expanded ? "Thu gọn" : "Đọc tiếp"}
         </button>
       )}
+      <EditorialArt category={p.category} compact={!!p.pinned} />
       <div className="post-actions">
         <button
           className="text-button"
@@ -300,7 +317,7 @@ export function Leaderboard() {
     <div className="member-layout">
       <section className="panel">
         <div className="section-heading">
-          <h2>Những khoản hoàn được xác nhận</h2>
+          <h2>Bảng xếp hạng</h2>
           <Icon name="trophy" />
         </div>
         <div className="tabs period-tabs">
@@ -805,11 +822,22 @@ export function HelpPage() {
 }
 
 export function LinkHistory() {
+  const [open, setOpen] = useState(false);
+  return (
+    <details
+      className="link-history"
+      onToggle={(e) => setOpen(e.currentTarget.open)}
+    >
+      <summary>Link đã tạo gần đây</summary>
+      {open && <LinkHistoryRows />}
+    </details>
+  );
+}
+function LinkHistoryRows() {
   const { version, setToast } = useApp();
   const state = useData("/clicks", version);
   return (
-    <details className="link-history">
-      <summary>Link đã tạo gần đây</summary>
+    <div>
       <DataState state={state}>
         {(rows) =>
           rows.length ? (
@@ -847,6 +875,6 @@ export function LinkHistory() {
           )
         }
       </DataState>
-    </details>
+    </div>
   );
 }
