@@ -42,7 +42,7 @@ test("Desktop: mở React, đăng nhập, ví và giao diện sáng/tối", asyn
   ).toBeVisible();
   expect(errors).toEqual([]);
 });
-test("Điện thoại 390px: điều hướng, lọc ưu đãi, lưu deal và không tràn ngang", async ({
+test("Điện thoại 390px: bốn mục điều hướng, sáng/tối và không tràn ngang", async ({
   page,
 }) => {
   mkdirSync("artifacts/screenshots", { recursive: true });
@@ -78,19 +78,11 @@ test("Điện thoại 390px: điều hướng, lọc ưu đãi, lưu deal và kh
   await expect(
     page.getByRole("heading", { name: "Tạo link hoàn tiền", exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole("navigation", { name: "Điều hướng điện thoại" })
-    .getByRole("button", { name: "Ưu đãi", exact: true })
-    .click();
-  await page.getByRole("button", { name: "Công nghệ", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Nâng cấp âm thanh" }),
-  ).toBeVisible();
-  await expect(page.locator(".deal-card")).toHaveCount(1);
-  await page.getByRole("button", { name: "Lưu ưu đãi", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Bỏ lưu ưu đãi" }),
-  ).toBeVisible();
+    page
+      .getByRole("navigation", { name: "Điều hướng điện thoại" })
+      .getByRole("button"),
+  ).toHaveCount(4);
   await page
     .getByRole("navigation", { name: "Điều hướng điện thoại" })
     .getByRole("button", { name: "Đơn hàng", exact: true })
@@ -146,7 +138,7 @@ test("Luồng React: đăng ký → link → đơn demo → quản trị duyệt
     .getByRole("button", { name: "Mua hàng nhận hoàn tiền", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: /Thử một lần mua/ }),
+    page.getByRole("heading", { name: "Mua thử sản phẩm" }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Mô phỏng mua & ghi nhận đơn chờ duyệt" })

@@ -17,10 +17,10 @@ API Key là của AddLiveTag, không phải Shopee Affiliate ID hoặc Shopee Ap
 ## Sử dụng trên giao diện
 
 - Đăng nhập → dán **link sản phẩm đầy đủ** → Kiểm tra hoàn tiền: giữ link demo, bổ sung ảnh/tên/giá/hoa hồng tham khảo khi dữ liệu tải được.
-- Ưu đãi → **Dữ liệu Shopee tham khảo**: tìm theo từ khóa, phân trang, xem chi tiết và mở lịch sử giá theo các mốc thay đổi. Lịch sử tải khi mở, không gọi sẵn cho toàn bộ sản phẩm.
-- Link “Xem giá trên Shopee” là link gốc, không ghi nhận affiliate hoặc đơn hàng trong Lá. Nút mua demo vẫn mở `/demo-shop`.
+- Blog và Deal hời đã được gỡ, không có mục thay thế. Lịch sử giá vẫn xem được trong kết quả tra cứu link; chỉ tải khi mở.
+- Link “Xem giá trên Shopee” là link gốc, không ghi nhận affiliate hoặc đơn hàng trong Lá. Nút mua demo mở `/demo-shop`, hiển thị ảnh, tên, shop và giá sản phẩm từ bản lưu phía server của từng link. Tải lại trang hoặc mở từ lịch sử vẫn dùng bản lưu đó.
 - Link rút gọn vẫn dùng được cho demo nhưng tra cứu dữ liệu yêu cầu mở Shopee và sao chép link đầy đủ. Không tự fetch URL do người dùng gửi để resolve redirect.
-- Thiếu key: tab tham khảo hiện trạng thái chưa kết nối. Nguồn lỗi: báo lỗi ở vùng liên quan, vẫn dùng được các chức năng demo.
+- Thiếu key: kết quả tra cứu báo chưa kết nối. Nguồn lỗi: báo lỗi ở vùng liên quan, vẫn dùng được các chức năng demo.
 
 ## Hợp đồng backend
 
@@ -45,7 +45,7 @@ Batch chủ động giới hạn maxApi ≤50, mặc định 10. Không mở tù
 - Cache bộ nhớ tối đa 200 request và 20 MB payload: sản phẩm/batch/offers 10 phút, lịch sử 1 giờ; gộp request trùng đang chạy. Khi nguồn lỗi, bản lưu dưới 24 giờ có thể trả lại với `stale` và cảnh báo. Đây là thời điểm backend tra cứu, không khẳng định thời điểm Shopee cập nhật.
 - HTTP 429 và `limits.sourceRateLimited`/`sourceCooldownSeconds` kích hoạt nghỉ tối thiểu 120 giây, tôn trọng Retry-After tới 1 giờ. Không tự lặp request. Cần chia sẻ quota/cache nếu sau này chạy nhiều instance.
 - Validate ID, whitelist host, loại tracking khỏi landing. Ảnh chỉ HTTPS thuộc CDN `*.susercontent.com`/`cf.shopee.vn`; CSP vẫn chặn script và kết nối ngoài origin từ trình duyệt.
-- Không nhập báo cáo đơn hoặc ghi tiền vào ledger từ Data API. Bootstrap vẫn trả `provider: demo`. Không cần migration.
+- Không nhập báo cáo đơn hoặc ghi tiền vào ledger từ Data API. Bootstrap vẫn trả `provider: demo`. Migration `005_click_products.sql` lưu ảnh/tên/giá/hoa hồng tham khảo theo click. Chỉ nút xác nhận mua mô phỏng mới tạo đơn và bút toán demo, không phải đơn hoặc khoản thu nhập thật. Dữ liệu từ browser không quyết định số tiền. Link cũ được bổ sung thông tin khi mở checkout; đơn đã ghi nhận giữ nguyên sự kiện và số tiền cũ để chống trùng. Khi thiếu giá hoặc hoa hồng, kịch bản dùng số minh họa 450.000đ/25.000đ, có nhãn rõ ràng.
 
 ## Liên kết affiliate
 
@@ -57,4 +57,4 @@ Chưa có Affiliate ID được duyệt và bằng chứng đối soát, nên kh
 
 `tests/catalog.test.js`: chuẩn hóa URL, chặn URL lạ/short-link resolver, tier/key, cache và request trùng, 429/cooldown, batch từng dòng, stale/401, zero khác unknown, lịch sử và giới hạn đầu vào, timeout/JSON hỏng, HTTP auth/CSRF và bất biến số dư.
 
-`e2e/catalog.spec.js`: các trạng thái chưa cấu hình/chưa đăng nhập, product/history, tìm kiếm/phân trang, lỗi/thử lại, phân biệt mua demo/link gốc, keyboard, không tràn ngang ở 1440/768/390/320px, hai theme. Test dùng fixture rõ ràng, không gọi API thật và không cần secret trong CI.
+`e2e/catalog.spec.js`: các trạng thái chưa cấu hình/chưa đăng nhập, product/history, checkout đúng sản phẩm qua tải lại trang, lỗi quyền sở hữu và thông tin chưa tải, phân biệt mua demo/link gốc, keyboard, không tràn ngang ở 1440/768/390/320px, hai theme. Test dùng fixture rõ ràng, không gọi API thật và không cần secret trong CI.

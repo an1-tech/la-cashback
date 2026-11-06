@@ -19,7 +19,6 @@ import {
   Form,
   Field,
   Modal,
-  DealArt,
   LogoutButton,
 } from "./components";
 import { Admin } from "./pages/Admin";
@@ -46,18 +45,17 @@ import {
   Identity,
   PromoCarousel,
   ProfileHub,
-  Blog,
   FAQ,
   Contact,
   Legal,
   PageFooter,
 } from "./pages/Reference";
 import "./reference.css";
-import { CatalogOffers, ProductReference } from "./pages/Catalog";
+import { ProductReference } from "./pages/Catalog";
+import { DemoShop } from "./pages/DemoShop";
 const nav = [
   ["home", "Trang chủ", "home"],
   ["orders", "Đơn hàng", "bag"],
-  ["deals", "Ưu đãi", "gift"],
   ["wallet", "Số dư", "wallet"],
   ["profile", "Cá nhân", "user"],
 ];
@@ -361,15 +359,7 @@ export default function App() {
           <main
             className={
               "main-content " +
-              ([
-                "deals",
-                "blog",
-                "admin",
-                "faq",
-                "help",
-                "contact",
-                "feedback",
-              ].includes(page)
+              (["admin", "faq", "help", "contact", "feedback"].includes(page)
                 ? "wide-content"
                 : "narrow-content")
             }
@@ -388,8 +378,6 @@ export default function App() {
               <Leaderboard />
             ) : ["help", "faq"].includes(page) ? (
               <FAQ support={page === "help"} />
-            ) : page === "blog" ? (
-              <Blog />
             ) : ["contact", "feedback"].includes(page) ? (
               <Contact feedback={page === "feedback"} />
             ) : page === "legal" ? (
@@ -403,8 +391,6 @@ export default function App() {
                 </section>
                 <PromoCarousel />
               </div>
-            ) : page === "deals" ? (
-              <Deals />
             ) : page === "demo" ? (
               <DemoShop />
             ) : page === "try" ? (
@@ -507,41 +493,6 @@ function Home() {
       <div className="home-ranking">
         <Leaderboard />
       </div>
-      <section className="panel discovery-reference">
-        <div className="section-heading">
-          <h2>Khám phá ưu đãi</h2>
-          <button className="text-button" onClick={() => navigate("deals")}>
-            Xem tất cả <Icon name="arrow" size={15} />
-          </button>
-        </div>
-        <div className="discovery-grid">
-          {[
-            ["Công nghệ", "Tai nghe", 0],
-            ["Làm đẹp", "Chăm sóc da", 1],
-            ["Thời trang", "Thời trang", 2],
-          ].map(([category, label, index]) => (
-            <button
-              className="discovery-card"
-              aria-label={label + " minh họa"}
-              key={category}
-              onClick={() => {
-                sessionStorage.setItem("la-deal-category", category);
-                navigate("deals");
-              }}
-            >
-              <img
-                src={"/images/category-" + index + "-400.webp"}
-                alt=""
-                width="400"
-                height="400"
-                loading="lazy"
-              />
-              <strong>{label}</strong>
-              <small>Ưu đãi minh họa</small>
-            </button>
-          ))}
-        </div>
-      </section>
       <p className="home-demo-caption">
         Bản demo đề án · Đơn hàng và thanh toán mô phỏng
       </p>
@@ -781,233 +732,6 @@ function LinkBox({ initialUrl = "" }) {
           {checked.product && (
             <ProductReference key={checked.product.itemId} data={checked} />
           )}
-        </>
-      )}
-    </div>
-  );
-}
-function DealCard({ deal, index }) {
-  const { boot, mutate, setModal, setToast } = useApp();
-  const [detail, setDetail] = useState(false),
-    [busy, setBusy] = useState(false);
-  return (
-    <article className="deal-card">
-      <div className={"deal-picture " + deal.accent}>
-        <span className="deal-label">Ưu đãi minh họa</span>
-        <button
-          className={"save-button " + (deal.saved ? "saved" : "")}
-          aria-label={deal.saved ? "Bỏ lưu ưu đãi" : "Lưu ưu đãi"}
-          aria-pressed={!!deal.saved}
-          disabled={busy}
-          onClick={async () => {
-            if (!boot.user) {
-              setModal("auth");
-              return;
-            }
-            setBusy(true);
-            try {
-              await mutate(`/deals/${deal.id}/save`, { saved: !deal.saved });
-              setToast(deal.saved ? "Đã bỏ lưu ưu đãi." : "Đã lưu ưu đãi.");
-            } catch (e) {
-              setToast(e.message);
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          <Icon name="bookmark" size={17} />
-        </button>
-        <DealArt type={index} />
-        <span className="picture-category">{deal.category}</span>
-      </div>
-      <div className="deal-body">
-        <div className="merchant">
-          <span className="shopee-mini">S</span> Shopee <span>•</span> Demo
-        </div>
-        <h3>{deal.title}</h3>
-        <p>{deal.description}</p>
-        <button className="deal-open" onClick={() => setDetail(true)}>
-          Khám phá ưu đãi <Icon name="arrow" size={16} />
-        </button>
-      </div>
-      {detail && (
-        <Modal title={deal.title} onClose={() => setDetail(false)}>
-          <Badge>ƯU ĐÃI MÔ PHỎNG</Badge>
-          <p>{deal.description}</p>
-          <div className="coupon">
-            <code>{deal.code || "Không cần mã"}</code>
-            <button
-              className="icon-button"
-              aria-label="Sao chép mã"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(deal.code || "");
-                  setToast("Đã sao chép mã minh họa.");
-                } catch {
-                  setToast(
-                    "Không thể sao chép tự động. Hãy chọn và sao chép mã.",
-                  );
-                }
-              }}
-            >
-              <Icon name="copy" />
-            </button>
-          </div>
-          <p>
-            <b>Hết hạn:</b> {date(deal.expires_at)}
-          </p>
-          <p>{deal.conditions}</p>
-          <LinkBox initialUrl={deal.url} />
-        </Modal>
-      )}
-    </article>
-  );
-}
-function Deals() {
-  const { boot } = useApp();
-  const [source, setSource] = useState("demo");
-  const [q, setQ] = useState(
-      () => new URLSearchParams(location.search).get("search") || "",
-    ),
-    [category, setCategory] = useState(() => {
-      const value = sessionStorage.getItem("la-deal-category");
-      sessionStorage.removeItem("la-deal-category");
-      return value || "Tất cả";
-    }),
-    [saved, setSaved] = useState(false),
-    [sort, setSort] = useState("relevance");
-  const categories = ["Tất cả", ...new Set(boot.deals.map((d) => d.category))];
-  const deals = boot.deals.filter(
-    (d) =>
-      (category === "Tất cả" || d.category === category) &&
-      (!saved || d.saved) &&
-      (d.title + " " + d.description + " " + d.code)
-        .toLocaleLowerCase("vi")
-        .includes(q.toLocaleLowerCase("vi")),
-  );
-  if (sort === "expiry")
-    deals.sort((a, b) => a.expires_at.localeCompare(b.expires_at));
-  if (sort === "title")
-    deals.sort((a, b) => a.title.localeCompare(b.title, "vi"));
-  return (
-    <div className="reference-deals">
-      <div className="tabs" aria-label="Nguồn ưu đãi">
-        <button
-          className={source === "demo" ? "active" : ""}
-          aria-pressed={source === "demo"}
-          onClick={() => setSource("demo")}
-        >
-          Ưu đãi minh họa
-        </button>
-        <button
-          className={source === "catalog" ? "active" : ""}
-          aria-pressed={source === "catalog"}
-          onClick={() => setSource("catalog")}
-        >
-          Dữ liệu Shopee tham khảo
-        </button>
-      </div>
-      {source === "catalog" ? (
-        <CatalogOffers />
-      ) : (
-        <>
-          <div className="search-input">
-            <Icon name="search" />
-            <input
-              aria-label="Tìm ưu đãi"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Nhập tên sản phẩm, ưu đãi hoặc mã giảm giá…"
-            />
-          </div>
-          <div className="tabs deal-mode-tabs">
-            <button
-              className={!saved ? "active" : ""}
-              onClick={() => setSaved(false)}
-            >
-              Deal hời
-            </button>
-            <button
-              className={saved ? "active" : ""}
-              onClick={() => setSaved(true)}
-            >
-              Đã lưu
-            </button>
-          </div>
-          <div className="tabs deal-sort-tabs" aria-label="Sắp xếp ưu đãi">
-            {[
-              ["relevance", "Liên quan nhất"],
-              ["expiry", "Sắp hết hạn"],
-              ["title", "Tên A đến Z"],
-            ].map(([v, t]) => (
-              <button
-                key={v}
-                className={sort === v ? "active" : ""}
-                onClick={() => setSort(v)}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-          <div className="deal-browser">
-            <aside className="panel deal-filters">
-              <h2>Bộ lọc</h2>
-              <h3>Danh mục</h3>
-              <div className="tabs deal-category-list">
-                {categories.map((c) => (
-                  <button
-                    key={c}
-                    className={category === c ? "active" : ""}
-                    onClick={() => setCategory(c)}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-              <label className="check-label">
-                <input
-                  type="checkbox"
-                  checked={saved}
-                  onChange={(e) => setSaved(e.target.checked)}
-                />
-                Ưu đãi đã lưu
-              </label>
-              <button
-                className="button"
-                onClick={() => {
-                  setQ("");
-                  setCategory("Tất cả");
-                  setSaved(false);
-                  setSort("relevance");
-                }}
-              >
-                Xóa bộ lọc
-              </button>
-              <p className="microcopy">
-                Nội dung minh họa cho đề án, chưa áp dụng khi mua sắm thật
-              </p>
-            </aside>
-            <section>
-              <p className="deal-result-count">
-                {deals.length} ưu đãi minh họa
-              </p>
-              {deals.length ? (
-                <div className="deal-grid">
-                  {deals.map((d) => (
-                    <DealCard
-                      key={d.id}
-                      deal={d}
-                      index={boot.deals.indexOf(d)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <Empty title="Chưa tìm thấy ưu đãi">
-                  Thử từ khóa khác hoặc thay đổi bộ lọc của bạn.
-                </Empty>
-              )}
-            </section>
-          </div>
         </>
       )}
     </div>
@@ -2050,81 +1774,5 @@ function Notifications() {
         }
       </DataState>
     </Modal>
-  );
-}
-function DemoShop() {
-  const { boot, version, mutate, setModal, navigate, setToast } = useApp();
-  const clickId = new URLSearchParams(location.search).get("click");
-  const state = useData("/clicks", version);
-  return (
-    <section className="panel demo-shop">
-      <span className="hero-label">CỬA HÀNG MÔ PHỎNG · KHÔNG PHẢI SHOPEE</span>
-      <h1>
-        Thử một lần mua
-        <br />
-        Hiểu cả hành trình
-      </h1>
-      <p>Không có hàng hóa được mua hay tiền thật được sử dụng.</p>
-      {!boot.user ? (
-        <button className="button primary" onClick={() => setModal("auth")}>
-          Đăng nhập để thử
-        </button>
-      ) : (
-        <DataState state={state}>
-          {(clicks) => {
-            const click = clicks.find((c) => c.id === clickId);
-            return click ? (
-              <>
-                <div className="demo-product">
-                  <span className="demo-product-art">
-                    <Icon name="bag" size={62} />
-                  </span>
-                  <div>
-                    <h2>Sản phẩm mô phỏng</h2>
-                    <p>
-                      Giá trị đơn: {money(450000)} · Hoa hồng giả lập:{" "}
-                      {money(25000)}
-                    </p>
-                    <p>
-                      Đây là số tiền cố định của kịch bản demo, không phải mức
-                      hoa hồng Shopee.
-                    </p>
-                    <p className="mono microcopy">
-                      Theo dõi: {click.id}
-                      <br />
-                      Chính sách đã gắn: v{click.version}
-                    </p>
-                  </div>
-                </div>
-                <Form
-                  submitLabel="Mô phỏng mua & ghi nhận đơn chờ duyệt"
-                  onSubmit={async () => {
-                    const result = await mutate("/demo/order", { clickId });
-                    setToast(
-                      result.duplicate
-                        ? "Đơn demo này đã được ghi nhận trước đó."
-                        : "Đã ghi nhận đơn demo, chờ quản trị đối soát.",
-                    );
-                    navigate("orders");
-                  }}
-                >
-                  <p className="microcopy">
-                    Gửi lại không tạo đơn hoặc tiền hoàn trùng. Quản trị viên
-                    thực hiện bước duyệt/từ chối tiếp theo.
-                  </p>
-                </Form>
-              </>
-            ) : (
-              <Empty title="Không tìm thấy lượt theo dõi của bạn">
-                Trở về Trang chủ và tạo lượt mua thử mới.
-              </Empty>
-            );
-          }}
-        </DataState>
-      )}
-      <button className="text-button spaced" onClick={() => navigate("home")}>
-        Trở về Trang chủ <Icon name="arrow" size={16} />
-      </button>
-    </section>
   );
 }

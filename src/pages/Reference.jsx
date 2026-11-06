@@ -32,13 +32,11 @@ export const primaryNavigation = [
   ["home", "Trang chủ", "home"],
   ["feed", "Bảng tin", "feed"],
   ["links", "Tạo link hoàn tiền", "link"],
-  ["deals", "Deal hời", "bag"],
   ["profile", "Hồ sơ", "user"],
 ];
 export const secondaryNavigation = [
   ["help", "Hỏi đáp & Hỗ trợ", "help"],
   ["settings", "Cài đặt", "grid"],
-  ["blog", "Blog", "feed"],
   ["faq", "Hỏi đáp", "help"],
   ["contact", "Liên hệ", "external"],
   ["legal", "Pháp lý", "shield"],
@@ -324,84 +322,6 @@ export function EditorialArt({ category, compact = false }) {
             ? "Từng khoản hoàn, thật rõ"
             : "Chuyện từ vườn Lá"}
       </strong>
-    </div>
-  );
-}
-
-export function Blog() {
-  const { version, navigate } = useApp();
-  const state = useData("/feed", version);
-  const [query, setQuery] = useState(""),
-    [category, setCategory] = useState("Tất cả");
-  return (
-    <div className="blog-page">
-      <div className="blog-intro">
-        <span>Góc Lá</span>
-        <h2>Mua sắm thông minh, nhận lại nhiều hơn</h2>
-        <p>
-          Hướng dẫn hoàn tiền, theo dõi đơn và quản lý chi tiêu trong bản trải
-          nghiệm
-        </p>
-      </div>
-      <div className="blog-filters">
-        <label className="search-field">
-          <Icon name="search" size={18} />
-          <input
-            aria-label="Tìm bài viết"
-            placeholder="Tìm bài viết…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </label>
-        <select
-          aria-label="Danh mục bài viết"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
-          {["Tất cả", "Hướng dẫn", "Ví & đơn hàng", "Cộng đồng"].map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
-      </div>
-      <DataState state={state}>
-        {(posts) => {
-          const rows = posts.filter(
-            (p) =>
-              (category === "Tất cả" || category === p.category) &&
-              (p.title + p.body)
-                .toLocaleLowerCase("vi")
-                .includes(query.toLocaleLowerCase("vi")),
-          );
-          return (
-            <>
-              <p className="muted">{rows.length} bài viết</p>
-              <div className="blog-grid">
-                {rows.map((p) => (
-                  <article className="blog-card" key={p.id}>
-                    <EditorialArt category={p.category} />
-                    <div>
-                      <span className="blog-category">{p.category}</span>
-                      <small>{date(p.created_at)}</small>
-                      <h3>{p.title}</h3>
-                      <p>
-                        {p.body.slice(0, 150)}
-                        {p.body.length > 150 ? "…" : ""}
-                      </p>
-                      <button
-                        className="text-button"
-                        onClick={() => navigate("feed?post=" + p.id)}
-                      >
-                        Đọc bài viết <Icon name="arrow" size={16} />
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-              {!rows.length && <p>Không tìm thấy bài viết phù hợp</p>}
-            </>
-          );
-        }}
-      </DataState>
     </div>
   );
 }
@@ -774,7 +694,6 @@ export function PageFooter() {
     <footer className="main-footer reference-footer">
       <nav aria-label="Liên kết cuối trang">
         {[
-          ["blog", "Blog"],
           ["faq", "Hỏi đáp"],
           ["contact", "Liên hệ"],
           ["feedback", "Phản hồi và góp ý"],

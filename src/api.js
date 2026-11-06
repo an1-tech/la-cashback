@@ -24,13 +24,11 @@ export async function api(path, { method = "GET", body, signal } = {}) {
 }
 export const pageTitles = {
   home: "Trang chủ",
-  blog: "Blog",
   faq: "Hỏi đáp",
   contact: "Liên hệ",
   feedback: "Phản hồi và góp ý",
   legal: "Pháp lý",
   orders: "Đơn hàng của bạn",
-  deals: "Ưu đãi",
   wallet: "Số dư & rút tiền",
   profile: "Tài khoản của bạn",
   admin: "Không gian quản trị",
@@ -50,12 +48,8 @@ export const pageTitles = {
 // "#admin/orders?x=1" → "admin"; phần sau dấu "/" là tab con của trang.
 export function currentPage() {
   if (location.pathname === "/demo-shop") return "demo";
-  if (
-    !location.hash &&
-    new URLSearchParams(location.search).get("view") === "deals"
-  )
-    return "deals";
-  return location.hash.slice(1).split(/[?/]/)[0] || "home";
+  const page = location.hash.slice(1).split(/[?/]/)[0] || "home";
+  return ["blog", "deals"].includes(page) ? "home" : page;
 }
 const allowedHosts = [
   "shopee.vn",

@@ -100,23 +100,12 @@ async function login(page) {
     .getByRole("button", { name: "Đăng nhập", exact: true })
     .click();
   await page.getByRole("dialog").locator("button[type=submit]").click();
-  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await expect(page.getByRole("dialog")).not.toBeVisible({ timeout: 15000 });
 }
 
 test("Catalog: optional configuration, product/history, keyboard and demo separation", async ({
   page,
 }) => {
-  await page.goto("/app#deals");
-  await page
-    .getByRole("button", { name: "Dữ liệu Shopee tham khảo", exact: true })
-    .click();
-  await expect(
-    page.getByText("Chưa kết nối nguồn dữ liệu sản phẩm", { exact: true }),
-  ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Ưu đãi minh họa", exact: true })
-    .click();
-  await expect(page.locator(".deal-card").first()).toBeVisible();
   await mockCatalog(page);
   await page.goto("/app");
   await login(page);
@@ -153,103 +142,143 @@ test("Catalog: optional configuration, product/history, keyboard and demo separa
   await expect(page.getByText("76.000 đ", { exact: true })).toBeVisible();
 });
 
-test("Catalog: source switch, search, paging, detail and mobile/dark layout", async ({
+test("Checkout: saved product, reload, keyboard and mobile/dark layout", async ({
   page,
 }) => {
+  test.setTimeout(60000);
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await mockCatalog(page);
-  await page.goto("/app#deals");
-  await page
-    .getByRole("button", { name: "Dữ liệu Shopee tham khảo", exact: true })
-    .click();
-  await expect(
-    page.getByText("Đăng nhập để tra cứu sản phẩm và lịch sử giá.", {
-      exact: true,
+  await page.route("**/api/demo/checkout?**", (route) =>
+    route.fulfill({
+      json: {
+        click: { id: "fixture-click", url: product.url, policyVersion: 1 },
+        product: {
+          ...product,
+          image: "https://down-vn.img.susercontent.com/file/checkout-fixture",
+          fetchedAt: metadata.fetchedAt,
+        },
+        scenario: {
+          title: product.title,
+          orderValue: product.price,
+          commission: product.commission,
+          cashback: 6125,
+          usesReference: true,
+          alreadyRecorded: false,
+        },
+      },
     }),
-  ).toBeVisible();
-  await login(page);
-  await expect(page.locator(".catalog-card")).toHaveCount(2);
-  await page.getByLabel("Tên sản phẩm", { exact: true }).fill("tai nghe");
-  await page.getByRole("button", { name: "Tìm sản phẩm", exact: true }).click();
-  await expect(page.locator(".catalog-card")).toHaveCount(2);
-  await page.getByRole("button", { name: "Trang sau", exact: true }).click();
-  await expect(page.getByText("Trang 2", { exact: true })).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Trang sau", exact: true }),
-  ).toBeDisabled();
-  await page
-    .getByRole("button", { name: "Xem chi tiết", exact: true })
-    .first()
-    .click();
-  await expect(page.locator(".catalog-detail")).toContainText(
-    "Tỷ lệ của tài khoản nguồn",
   );
-  await page.locator(".catalog-detail summary").click();
-  await expect(page.locator(".price-history-table")).toBeVisible();
-  mkdirSync("artifacts/catalog", { recursive: true });
+  // A local image fixture checks successful rendering without external CDN access in CI.
+  await page.route(
+    "https://down-vn.img.susercontent.com/file/checkout-fixture",
+    (route) =>
+      route.fulfill({
+        contentType: "image/svg+xml",
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="#f0f4e8"/><path d="M100 230V180a100 100 0 0 1 200 0v50" fill="none" stroke="#557c30" stroke-width="28"/><rect x="75" y="210" width="65" height="100" rx="20" fill="#203027"/><rect x="260" y="210" width="65" height="100" rx="20" fill="#203027"/></svg>',
+      }),
+  );
+  await page.goto("/app");
+  await login(page);
+  await page
+    .getByLabel("Link sản phẩm Shopee", { exact: true })
+    .fill(product.url);
+  await page
+    .getByRole("button", { name: "Kiểm tra hoàn tiền", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Mua hàng nhận hoàn tiền", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Mua thử sản phẩm", exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.locator(".checkout-product-name")).toHaveText(
+    product.title,
+  );
+  await expect(page.locator(".checkout-price")).toContainText("175.000");
+  await expect(page.locator(".checkout-summary")).toContainText("6.125");
+  await expect(page.locator(".checkout-image img")).toHaveJSProperty(
+    "naturalWidth",
+    400,
+  );
+  await expect(
+    page.getByRole("link", { name: "Xem sản phẩm trên Shopee" }),
+  ).toHaveAttribute("href", product.url);
+  await page.getByRole("link", { name: "Xem sản phẩm trên Shopee" }).focus();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { name: "Mô phỏng mua & ghi nhận đơn chờ duyệt" }),
+  ).toBeFocused();
+  mkdirSync("artifacts/checkout", { recursive: true });
   await page.emulateMedia({ reducedMotion: "reduce" });
   for (const width of [1440, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });
-    if (width < 761)
-      await expect
-        .poll(() =>
-          page
-            .locator(".sidebar")
-            .evaluate((element) => element.getBoundingClientRect().right),
-        )
-        .toBeLessThanOrEqual(0);
     for (const theme of ["light", "dark"]) {
       await page.evaluate((value) => {
         document.documentElement.dataset.theme = value;
       }, theme);
-      await expect
-        .poll(() =>
-          page.evaluate(
-            () => document.documentElement.scrollWidth <= innerWidth,
-          ),
-        )
-        .toBe(true);
-      const priceCell = await page
-        .getByRole("columnheader", { name: "Giá (VNĐ)" })
-        .boundingBox();
-      expect(priceCell.x + priceCell.width).toBeLessThanOrEqual(width);
-      await page.evaluate(() => window.scrollTo(0, 0));
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      await page.evaluate(() => {
+        document.activeElement?.blur();
+        window.scrollTo(0, 0);
+      });
       await page.screenshot({
-        path: `artifacts/catalog/offers-${width}-${theme}.png`,
+        path: `artifacts/checkout/product-${width}-${theme}.png`,
         fullPage: true,
       });
     }
   }
-  await page.getByLabel("Tên sản phẩm", { exact: true }).fill("không có");
-  await page.getByRole("button", { name: "Tìm sản phẩm", exact: true }).click();
-  await expect(
-    page.getByText("Chưa tìm thấy sản phẩm phù hợp", { exact: true }),
-  ).toBeVisible();
   expect(errors).toEqual([]);
 });
 
-test("Catalog: upstream error stays inside its panel, retry and demo remain usable", async ({
+test("Checkout: missing click, ownership error and explicit fallback", async ({
   page,
 }) => {
-  await mockCatalog(page);
-  await page.route("**/api/catalog/offers?**", (route) =>
+  await page.goto("/app");
+  await login(page);
+  await page.goto("/demo-shop");
+  await expect(
+    page.getByText("Chưa có sản phẩm để mua thử", { exact: true }),
+  ).toBeVisible();
+  await page.route("**/api/demo/checkout?**", (route) =>
     route.fulfill({
-      status: 429,
-      json: { error: "Nguồn đang nghỉ, hãy thử lại sau." },
+      status: 404,
+      json: { error: "Không tìm thấy lượt theo dõi của bạn." },
     }),
   );
-  await page.goto("/app#deals");
-  await login(page);
-  await page
-    .getByRole("button", { name: "Dữ liệu Shopee tham khảo", exact: true })
-    .click();
-  await expect(page.getByRole("alert")).toContainText("Nguồn đang nghỉ");
+  await page.goto("/demo-shop?click=unknown");
+  await expect(page.getByRole("alert")).toHaveText(
+    "Không tìm thấy lượt theo dõi của bạn.",
+  );
   await expect(
-    page.getByRole("button", { name: "Thử tải lại sản phẩm", exact: true }),
-  ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Ưu đãi minh họa", exact: true })
-    .click();
-  await expect(page.locator(".deal-card").first()).toBeVisible();
+    page.getByRole("button", { name: "Mô phỏng mua & ghi nhận đơn chờ duyệt" }),
+  ).toHaveCount(0);
+  await page.unroute("**/api/demo/checkout?**");
+  await page.route("**/api/demo/checkout?**", (route) =>
+    route.fulfill({
+      json: {
+        click: { id: "no-data", url: product.url, policyVersion: 1 },
+        product: null,
+        scenario: {
+          title: "Sản phẩm mô phỏng từ lượt mua thử",
+          orderValue: 450000,
+          commission: 25000,
+          cashback: 17500,
+          usesReference: false,
+          alreadyRecorded: false,
+        },
+      },
+    }),
+  );
+  await page.reload();
+  await expect(page.locator(".checkout-notice").first()).toContainText(
+    "Chưa tải được ảnh",
+  );
+  await expect(page.locator(".checkout-image")).toContainText("Chưa có ảnh");
+  await expect(page.locator(".checkout-summary")).toContainText("450.000");
 });

@@ -11,7 +11,7 @@
     "start": "node --env-file-if-exists=.env server/index.js",
     "dev": "node --env-file-if-exists=.env scripts/dev.js",
     "build": "vite build",
-    "test": "node --test --test-concurrency=1",
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
     "test:ui": "playwright test",
     "format": "prettier --write src server scripts tests e2e *.js *.json index.html README.md docs",
     "migrate": "node --env-file-if-exists=.env scripts/migrate.js",
