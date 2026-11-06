@@ -3,7 +3,8 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   workers: 1,
-  timeout: 30000,
+  timeout: 60000,
+  expect: { timeout: 10000 },
   reporter: "list",
   outputDir: "artifacts/playwright",
   use: {

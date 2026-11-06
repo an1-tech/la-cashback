@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useApp } from "../context";
 import { money } from "../api";
 import { DataState, Empty, Icon, useData } from "../components";
 import "./catalog.css";
@@ -14,7 +13,7 @@ function SourceNote({ data }) {
     </p>
   );
 }
-function ProductImage({ product }) {
+export function ProductImage({ product }) {
   const [failed, setFailed] = useState(false);
   return product.image && !failed ? (
     <img
@@ -179,184 +178,6 @@ export function ProductReference({ data }) {
         <summary>Lịch sử giá tham khảo</summary>
         {history && <PriceHistory itemId={product.itemId} />}
       </details>
-    </section>
-  );
-}
-export function CatalogOffers() {
-  const { boot, setModal } = useApp();
-  const [draft, setDraft] = useState(""),
-    [keyword, setKeyword] = useState(""),
-    [page, setPage] = useState(1),
-    [retry, setRetry] = useState(0);
-  const [selected, setSelected] = useState(null);
-  const enabled = boot.catalog?.configured && boot.user;
-  const state = useData(
-    enabled
-      ? `/catalog/offers?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=20`
-      : null,
-    retry,
-  );
-  return (
-    <section className="catalog-offers">
-      <div className="section-heading">
-        <h2>Sản phẩm tham khảo</h2>
-      </div>
-      <p className="catalog-note">
-        Dữ liệu bên thứ ba dành cho demo học tập · Giá và hoa hồng có thể thay
-        đổi · Chưa ghi nhận tiền hoàn
-      </p>
-      {!boot.catalog?.configured ? (
-        <Empty title="Chưa kết nối nguồn dữ liệu sản phẩm">
-          Các ưu đãi minh họa vẫn sử dụng được ở tab bên cạnh.
-        </Empty>
-      ) : !boot.user ? (
-        <div className="panel">
-          <p>Đăng nhập để tra cứu sản phẩm và lịch sử giá.</p>
-          <button className="button primary" onClick={() => setModal("auth")}>
-            Đăng nhập để tra cứu
-          </button>
-        </div>
-      ) : (
-        <>
-          <form
-            className="catalog-search"
-            onSubmit={(event) => {
-              event.preventDefault();
-              setKeyword(draft.trim());
-              setPage(1);
-              setSelected(null);
-              setRetry((n) => n + 1);
-            }}
-          >
-            <label htmlFor="catalog-query">Tên sản phẩm</label>
-            <div>
-              <input
-                id="catalog-query"
-                value={draft}
-                maxLength={100}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder="Ví dụ: tai nghe"
-              />
-              <button className="button primary">Tìm sản phẩm</button>
-            </div>
-          </form>
-          <DataState state={state}>
-            {(data) => (
-              <>
-                <SourceNote data={data} />
-                {data.products.length ? (
-                  <div className="catalog-grid">
-                    {data.products.map((product, index) => (
-                      <article
-                        className="panel catalog-card"
-                        key={`${product.itemId}-${index}`}
-                      >
-                        <ProductImage product={product} />
-                        <h3>{product.title || "Sản phẩm chưa có tên"}</h3>
-                        <p>
-                          {product.price == null
-                            ? "Chưa có giá"
-                            : money(product.price)}
-                        </p>
-                        {product.ratePercent !== null && (
-                          <small>
-                            Hoa hồng nguồn:{" "}
-                            {new Intl.NumberFormat("vi-VN", {
-                              maximumFractionDigits: 2,
-                            }).format(product.ratePercent)}
-                            %
-                          </small>
-                        )}
-                        <button
-                          className="text-button"
-                          onClick={() => setSelected({ ...product })}
-                        >
-                          Xem chi tiết <Icon name="arrow" size={15} />
-                        </button>
-                      </article>
-                    ))}
-                  </div>
-                ) : (
-                  <Empty title="Chưa tìm thấy sản phẩm phù hợp" />
-                )}
-                <nav
-                  className="catalog-pagination"
-                  aria-label="Phân trang sản phẩm"
-                >
-                  <button
-                    className="button"
-                    disabled={page === 1}
-                    onClick={() => {
-                      setPage(page - 1);
-                      setSelected(null);
-                    }}
-                  >
-                    Trang trước
-                  </button>
-                  <span>Trang {page}</span>
-                  <button
-                    className="button"
-                    disabled={!data.hasNextPage}
-                    onClick={() => {
-                      setPage(page + 1);
-                      setSelected(null);
-                    }}
-                  >
-                    Trang sau
-                  </button>
-                </nav>
-              </>
-            )}
-          </DataState>
-          {state.error && (
-            <button className="button" onClick={() => setRetry((n) => n + 1)}>
-              Thử tải lại sản phẩm
-            </button>
-          )}
-          {selected && (
-            <SelectedProduct
-              key={selected.itemId}
-              selected={selected}
-              onClose={() => setSelected(null)}
-            />
-          )}
-        </>
-      )}
-    </section>
-  );
-}
-function SelectedProduct({ selected, onClose }) {
-  const [retry, setRetry] = useState(0);
-  const state = useData(
-    `/catalog/product?itemId=${encodeURIComponent(selected.itemId)}`,
-    retry,
-  );
-  return (
-    <section
-      className="panel catalog-detail"
-      aria-label="Chi tiết sản phẩm đã chọn"
-    >
-      <button className="button" onClick={onClose}>
-        Đóng chi tiết
-      </button>
-      <DataState state={state}>
-        {(data) => (
-          <ProductReference
-            data={{
-              ...data,
-              product: {
-                ...data.product,
-                url: data.product.url || selected.url,
-              },
-            }}
-          />
-        )}
-      </DataState>
-      {state.error && (
-        <button className="text-button" onClick={() => setRetry((n) => n + 1)}>
-          Thử tải lại chi tiết
-        </button>
-      )}
     </section>
   );
 }

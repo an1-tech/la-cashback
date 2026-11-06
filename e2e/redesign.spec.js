@@ -27,12 +27,12 @@ test("Landing routes to the app and preserves old shared links", async ({
   await expect(page.getByLabel("Link sản phẩm Shopee")).toBeVisible();
   await page.goto("/#deals");
   await expect(
-    page.getByRole("heading", { name: "Ưu đãi", exact: true }),
+    page.getByRole("heading", { name: "Tạo link hoàn tiền", exact: true }),
   ).toBeVisible();
-  await expect(page.getByLabel("Tìm ưu đãi")).toBeVisible();
+  await expect(page.getByLabel("Link sản phẩm Shopee")).toBeVisible();
 });
 
-test("Home: responsive layout, keyboard focus and category shortcut", async ({
+test("Home: responsive layout, keyboard focus and retired navigation", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -62,11 +62,12 @@ test("Home: responsive layout, keyboard focus and category shortcut", async ({
   await expect(
     page.getByRole("button", { name: "Kiểm tra hoàn tiền", exact: true }),
   ).toBeFocused();
-  await page.getByRole("button", { name: /Tai nghe minh họa/ }).click();
   await expect(
-    page.getByRole("button", { name: "Công nghệ", exact: true }),
-  ).toHaveClass("active");
-  await expect(page.locator(".deal-card")).toHaveCount(1);
+    page.getByRole("button", { name: "Deal hời", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Blog", exact: true }),
+  ).toHaveCount(0);
 });
 
 test("Dùng thử ngay: sandbox riêng, link được giữ qua đăng nhập, menu mobile", async ({

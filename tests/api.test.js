@@ -301,7 +301,7 @@ test("Nhập báo cáo kiểm tra từng dòng, chống trùng, giữ lại dòn
     await f.close();
   }
 });
-test("Đăng ký, sửa hồ sơ, hỗ trợ, lưu deal, thông báo, reset và thu hồi phiên", async () => {
+test("Đăng ký, hồ sơ, hỗ trợ, chức năng đã gỡ, thông báo và reset", async () => {
   const f = await fixture();
   try {
     const r = await request(f, "/auth/register", {
@@ -345,14 +345,9 @@ test("Đăng ký, sửa hồ sơ, hỗ trợ, lưu deal, thông báo, reset và 
           body: { saved: true },
         })
       ).status,
-      200,
+      404,
     );
-    assert.equal(
-      (await request(f, "/bootstrap", u)).data.deals.find(
-        (d) => d.id === "deal-1",
-      ).saved,
-      true,
-    );
+    assert.equal("deals" in (await request(f, "/bootstrap", u)).data, false);
     assert.equal(
       (
         await request(f, "/notifications/read", {

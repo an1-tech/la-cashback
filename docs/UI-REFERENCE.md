@@ -1,6 +1,6 @@
 # Giao diện Lá theo ảnh tham chiếu
 
-Bản tháng 11/2026 dùng cấu trúc từ các ảnh người dùng cung cấp: landing ngang, menu trái 240px, cột 690px cho trang chủ/bảng tin/hồ sơ, khung 1140px cho deal/blog và 1000px cho hỏi đáp/liên hệ. Nhận diện vẫn là chiếc lá, xanh rừng và xanh non; có sáng/tối và menu điện thoại.
+Bản tháng 11/2026 dùng cấu trúc từ các ảnh người dùng cung cấp: landing ngang, menu trái 240px, cột 690px cho trang chủ/bảng tin/hồ sơ, khung 1140px cho quản trị và 1000px cho hỏi đáp/liên hệ. Nhận diện vẫn là chiếc lá, xanh rừng và xanh non; có sáng/tối và menu điện thoại.
 
 Các trang mới dùng dữ liệu hiện có: Blog đọc bài trong bảng tin; đọc bài mở đúng bài được chọn; Liên hệ/Góp ý lưu ticket và theo dõi phản hồi trong tài khoản. Hỏi đáp có danh mục, tìm kiếm và accordion. Hồ sơ dẫn tới đúng bộ lọc đơn, sổ giao dịch, ngân hàng demo và các tiện ích thành viên. Banner có nút chuyển bằng chuột hoặc bàn phím, không tự chạy.
 

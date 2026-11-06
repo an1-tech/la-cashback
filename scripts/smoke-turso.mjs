@@ -93,6 +93,36 @@ try {
     "Content-Type": "application/json",
     "X-CSRF-Token": body.csrf,
   };
+  const tracked = await request("/clicks", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ url: "https://shopee.vn/product/45/123" }),
+  });
+  const clickId = new URL(tracked.body.redirectUrl, base).searchParams.get(
+    "click",
+  );
+  // Seed only this isolated CI database, with no external API key or source request.
+  docker(
+    "exec",
+    app,
+    "node",
+    "--input-type=module",
+    "-e",
+    `
+    import { openDb } from './server/db.js';
+    import { saveClickProduct } from './server/demo-products.js';
+    const db = openDb();
+    saveClickProduct(db, { id: ${JSON.stringify(clickId)}, url: 'https://shopee.vn/product/45/123' }, {
+      product: { itemId: '123', title: 'Sản phẩm CI lưu trên Turso', price: 175000, commission: 8750, image: 'https://cf.shopee.vn/file/ci', dataSource: 'db' },
+      fetchedAt: '2026-11-06T00:00:00.000Z'
+    });
+    db.close();
+  `,
+  );
+  const checkout = (
+    await request(`/demo/checkout?clickId=${clickId}`, { headers })
+  ).body;
+  assert.equal(checkout.product.price, 175000);
   const wallet = (await request("/wallet", { headers })).body;
   const orders = (await request("/orders", { headers })).body;
   assert.equal(orders.length, 4);
@@ -109,6 +139,25 @@ try {
   assert.equal(restored.user.id, body.user.id);
   assert.equal(restored.dataSince, initial.dataSince);
   assert.deepEqual((await request("/orders", { headers })).body, orders);
+  assert.deepEqual(
+    (await request(`/demo/checkout?clickId=${clickId}`, { headers })).body,
+    checkout,
+  );
+  const simulated = {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ clickId }),
+  };
+  const purchased = await request("/demo/order", simulated);
+  const repeated = await request("/demo/order", simulated);
+  assert.equal(repeated.body.duplicate, true);
+  assert.equal(repeated.body.orderId, purchased.body.orderId);
+  const savedOrder = (await request("/orders", { headers })).body.find(
+    (o) => o.id === purchased.body.orderId,
+  );
+  assert.equal(savedOrder.title, checkout.product.title);
+  assert.equal(savedOrder.order_value, 175000);
+  assert.equal(savedOrder.cashback, checkout.scenario.cashback);
   const after = (await request("/wallet", { headers })).body;
   assert.equal(after.balances.available, wallet.balances.available - 50000);
   assert.equal(after.balances.held, wallet.balances.held + 50000);

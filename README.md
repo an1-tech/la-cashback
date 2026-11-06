@@ -63,7 +63,7 @@ Nút **Dùng thử ngay** (trên trang giới thiệu, hoặc trong hộp đăng
 - Bảng xếp hạng tuần/tháng/năm/tất cả từ đơn hiện đã duyệt, dựa trên thời điểm cập nhật đối soát. Người dùng chủ động bật tham gia và đặt biệt danh. Không công khai email, mã người dùng hoặc ngân hàng.
 - Trung tâm hỏi đáp có tìm kiếm; gửi yêu cầu thiếu đơn/góp ý và theo dõi phản hồi trong cài đặt. Xem quy tắc và kịch bản thử tại [docs/COMMUNITY.md](docs/COMMUNITY.md).
 
-- React SPA tiếng Việt: Trang chủ, Đơn hàng, Ưu đãi, Số dư, Cá nhân; thanh điều hướng dưới trên điện thoại; sáng/tối được lưu trên trình duyệt.
+- React SPA tiếng Việt: Trang chủ, Đơn hàng, Số dư, Cá nhân; thanh điều hướng dưới trên điện thoại; sáng/tối được lưu trên trình duyệt.
 - Đăng ký, đăng nhập, đăng xuất, hồ sơ, đặt lại mật khẩu demo, đổi ngân hàng giả có xác nhận mật khẩu, khóa tài khoản và thu hồi phiên.
 - Kiểm tra URL whitelist, lưu lượt bấm và chính sách, cửa hàng mô phỏng, đối soát từng sản phẩm trong đơn, báo cáo trùng không ghi sổ trùng.
 - Đơn chờ duyệt / duyệt / từ chối, tiền dự kiến và tiền cuối cùng, lý do, lọc ngày/trạng thái, yêu cầu hỗ trợ.
@@ -137,7 +137,7 @@ DB SQLite WAL dùng cho một máy/volume local; không đặt trên ổ mạng 
 
 ## Giới hạn rõ ràng
 
-Không đọc tên/ảnh/giá sản phẩm thật; không resolve link rút gọn; không tạo affiliate URL; không API/webhook Shopee; không email/SMS/OTP; không chuyển khoản; không cam kết hoa hồng/thời gian ghi nhận. Deal/voucher, ngân hàng, reset token hiển thị trong UI và mọi thanh toán đều là mô phỏng.
+Có thể đọc tên/ảnh/giá tham khảo qua AddLiveTag cho mục đích học tập khi đã cấu hình API Key. Checkout lưu và hiển thị sản phẩm theo từng link; đơn, hoa hồng và thanh toán trong Lá vẫn là mô phỏng. Blog và Deal hời đã gỡ. Không resolve link rút gọn; không tạo affiliate URL hoạt động; không API/webhook đơn Shopee; không email/SMS/OTP hoặc chuyển khoản; không cam kết hoa hồng/thời gian ghi nhận.
 
 Bảng đơn của quản trị có phân trang 50 dòng, tìm kiếm phía server và xuất CSV toàn bộ kết quả lọc (ô dạng công thức được chặn). Các màn hình khác vẫn giới hạn 500 đơn/500 dòng sổ/200 yêu cầu và chưa phân trang. Chưa có chống bot chuyên dụng, MFA quản trị, mã hóa ngân hàng thật, dịch vụ thông báo ngoài ứng dụng, giám sát hay kiểm toán an ninh độc lập. Điểm danh, hạng thành viên, giới thiệu, bảng tin và mã quà tặng chỉ là dữ liệu trải nghiệm, không quy đổi tiền; chưa có nhiệm vụ hay đổi quà.
 

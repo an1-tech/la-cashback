@@ -47,17 +47,6 @@ export default function LandingView({
             </span>
             <strong>Lá Cashback</strong>
           </a>
-          <form className="landing-search" action="/app">
-            <input type="hidden" name="view" value="deals" />
-            <input
-              name="search"
-              aria-label="Tìm kiếm sản phẩm"
-              placeholder="Tìm kiếm sản phẩm"
-            />
-            <button aria-label="Tìm kiếm">
-              <Icon name="search" size={17} />
-            </button>
-          </form>
           <button
             className="landing-menu-button"
             aria-label={menuOpen ? "Đóng menu" : "Mở menu"}
@@ -77,8 +66,6 @@ export default function LandingView({
               ["/", "Trang chủ"],
               ["/app#links", "Tạo link hoàn tiền"],
               ["/app#feed", "Bảng tin"],
-              ["/app#deals", "Deal hời"],
-              ["/app#blog", "Blog"],
               ["/app#faq", "Hỏi đáp"],
               ["/app#contact", "Liên hệ"],
             ].map(([href, title]) => (
@@ -314,7 +301,6 @@ export default function LandingView({
             <section>
               <h3>Liên kết</h3>
               {[
-                ["blog", "Blog"],
                 ["faq", "Hỏi đáp"],
                 ["contact", "Liên hệ"],
                 ["feedback", "Phản hồi và góp ý"],

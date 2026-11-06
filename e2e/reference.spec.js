@@ -1,15 +1,15 @@
 import { test, expect } from "@playwright/test";
 
-test("Các trang mới: bài viết, hỏi đáp theo danh mục và liên hệ lưu vào hỗ trợ", async ({
+test("Blog đã gỡ, hỏi đáp theo danh mục và liên hệ lưu vào hỗ trợ", async ({
   page,
 }) => {
   await page.goto("/app#blog");
-  await expect(page.locator(".blog-card")).toHaveCount(3);
-  await page.getByLabel("Tìm bài viết").fill("Một đường link");
-  await expect(page.locator(".blog-card")).toHaveCount(1);
-  await page.getByRole("button", { name: "Đọc bài viết" }).click();
-  await expect(page).toHaveURL(/#feed\?post=/);
-  await expect(page.locator(".feed-post.highlighted")).toHaveCount(1);
+  await expect(
+    page.getByRole("heading", { name: "Tạo link hoàn tiền", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Blog", exact: true }),
+  ).toHaveCount(0);
   await page.goto("/app#faq");
   await page
     .getByRole("navigation", { name: "Danh mục hỏi đáp" })
@@ -60,10 +60,10 @@ test("Menu điện thoại, banner và chuyển thẳng từ hồ sơ đến b�
   await expect(drawer.getByRole("link")).toBeFocused();
   await page
     .getByRole("navigation", { name: "Khám phá Lá" })
-    .getByRole("button", { name: "Blog", exact: true })
+    .getByRole("button", { name: "Hỏi đáp", exact: true })
     .click();
   await expect(menu).toHaveAttribute("aria-expanded", "false");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Blog");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hỏi đáp");
   await menu.click();
   await page.keyboard.press("Escape");
   await expect(menu).toHaveAttribute("aria-expanded", "false");

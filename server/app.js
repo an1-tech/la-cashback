@@ -36,6 +36,7 @@ import {
 import { demoProvider } from "./providers/demo.js";
 import { createAddLiveTag } from "./providers/addlivetag.js";
 import { catalogRoutes } from "./catalog.js";
+import { saveClickProduct, demoCheckout } from "./demo-products.js";
 import { createSandboxAccount } from "./seed.js";
 import { createRemoteSandbox } from "./sandbox.js";
 import { communityRoutes } from "./community.js";
@@ -327,17 +328,6 @@ export function createApp(
         return;
       if (method === "GET" && path === "/api/bootstrap") {
         if (user) releaseDueFunds(db, user.id);
-        const deals = db
-          .prepare(
-            "SELECT * FROM deals WHERE active=1 AND expires_at>? ORDER BY rowid",
-          )
-          .all(now());
-        const saved = user
-          ? db
-              .prepare("SELECT deal_id FROM saved_deals WHERE user_id=?")
-              .all(user.id)
-              .map((x) => x.deal_id)
-          : [];
         send({
           demo: true,
           publicDemo,
@@ -357,7 +347,6 @@ export function createApp(
               .all()
               .map((x) => [x.key, x.value]),
           ),
-          deals: deals.map((d) => ({ ...d, saved: saved.includes(d.id) })),
           balances: user ? balances(db, user.id) : null,
           unread: user
             ? db
@@ -520,22 +509,55 @@ export function createApp(
       if (method === "POST" && path === "/api/clicks") {
         rateLimit(db, `click:${user.id}`, 20, 60);
         const link = shopeeUrl(body.url);
+        let lookup;
+        if (catalog.capabilities.configured) {
+          try {
+            lookup = await catalog.inspect(link);
+          } catch {
+            /* Demo remains usable if the data source is down. */
+          }
+        }
         const policy = currentPolicy(db);
         ensure(policy, "Chưa có chính sách đang áp dụng.");
         const clickId = id();
-        db.prepare("INSERT INTO clicks VALUES (?,?,?,?,?,?,?)").run(
-          clickId,
-          user.id,
-          policy.id,
-          "demo",
-          link,
-          null,
-          now(),
-        );
+        transaction(db, () => {
+          db.prepare("INSERT INTO clicks VALUES (?,?,?,?,?,?,?)").run(
+            clickId,
+            user.id,
+            policy.id,
+            "demo",
+            link,
+            null,
+            now(),
+          );
+          if (lookup) saveClickProduct(db, { id: clickId, url: link }, lookup);
+        });
         send({
           ...demoProvider.createLink(clickId),
           policyVersion: policy.version,
         });
+        return;
+      }
+      if (method === "GET" && path === "/api/demo/checkout") {
+        needUser();
+        const clickId = idInput(url.searchParams.get("clickId"), "Mã lượt bấm");
+        let checkout = demoCheckout(db, user.id, clickId);
+        // Existing links from earlier versions also get the original product.
+        if (!checkout.product && catalog.capabilities.configured) {
+          try {
+            const lookup = await catalog.inspect(checkout.click.url);
+            saveClickProduct(
+              db,
+              { id: clickId, url: checkout.click.url },
+              lookup,
+            );
+            checkout = demoCheckout(db, user.id, clickId);
+          } catch {
+            /* Keep the explicit fallback scenario, never fabricate product data. */
+          }
+        }
+        const { payload, ...view } = checkout;
+        send(view);
         return;
       }
       if (method === "GET" && path === "/api/clicks") {
@@ -555,21 +577,8 @@ export function createApp(
           .prepare("SELECT * FROM clicks WHERE id=? AND user_id=?")
           .get(idInput(body.clickId, "Mã lượt bấm"), user.id);
         ensure(click, "Không tìm thấy lượt bấm của bạn.", 404);
-        const externalId = `DEMO-${click.id}`;
-        const result = ingestReport(
-          db,
-          {
-            eventId: `demo-order-${click.id}`,
-            externalId,
-            itemId: "1",
-            clickId: click.id,
-            title: "Sản phẩm mô phỏng từ lượt mua thử",
-            orderValue: 450000,
-            commission: 25000,
-            status: "pending",
-          },
-          user.id,
-        );
+        const { payload } = demoCheckout(db, user.id, click.id);
+        const result = ingestReport(db, payload, user.id);
         send(result);
         return;
       }
@@ -664,25 +673,6 @@ export function createApp(
         db.prepare(
           "UPDATE notifications SET read_at=? WHERE user_id=? AND read_at IS NULL",
         ).run(now(), user.id);
-        send({ ok: true });
-        return;
-      }
-      if (method === "POST" && /^\/api\/deals\/[^/]+\/save$/.test(path)) {
-        const dealId = path.split("/")[3];
-        ensure(
-          db.prepare("SELECT 1 FROM deals WHERE id=?").get(dealId),
-          "Ưu đãi không tồn tại.",
-          404,
-        );
-        if (body.saved === true)
-          db.prepare("INSERT OR IGNORE INTO saved_deals VALUES (?,?)").run(
-            user.id,
-            dealId,
-          );
-        else
-          db.prepare(
-            "DELETE FROM saved_deals WHERE user_id=? AND deal_id=?",
-          ).run(user.id, dealId);
         send({ ok: true });
         return;
       }
@@ -801,7 +791,6 @@ export function createApp(
                 "SELECT a.*,u.email FROM audit_logs a JOIN users u ON u.id=a.actor_id ORDER BY a.created_at DESC LIMIT 200",
               )
               .all(),
-            deals: db.prepare("SELECT * FROM deals").all(),
             content: Object.fromEntries(
               db
                 .prepare("SELECT * FROM content")
@@ -1045,30 +1034,6 @@ export function createApp(
             audit(db, user.id, "content.update", "homepage", {});
           });
           send({ ok: true });
-          return;
-        }
-        if (method === "POST" && path === "/api/admin/deals") {
-          const dealId = body.id ? idInput(body.id, "Mã ưu đãi") : id();
-          const values = [
-            textInput(body.title, "Tiêu đề", 150, 3),
-            textInput(body.category, "Danh mục", 50),
-            textInput(body.description, "Mô tả", 500),
-            body.code ? textInput(body.code, "Mã", 50) : "",
-            isoDate(body.expiresAt, "Hết hạn"),
-            shopeeUrl(body.url),
-            textInput(body.conditions, "Điều kiện", 500),
-            ["mint", "peach", "lavender", "blue"].includes(body.accent)
-              ? body.accent
-              : "mint",
-            body.active === false ? 0 : 1,
-          ];
-          transaction(db, () => {
-            db.prepare(
-              "INSERT INTO deals VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET title=excluded.title,category=excluded.category,description=excluded.description,code=excluded.code,expires_at=excluded.expires_at,url=excluded.url,conditions=excluded.conditions,accent=excluded.accent,active=excluded.active",
-            ).run(dealId, ...values);
-            audit(db, user.id, "deal.save", dealId, {});
-          });
-          send({ id: dealId });
           return;
         }
       }

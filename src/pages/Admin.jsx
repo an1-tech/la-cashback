@@ -17,7 +17,7 @@ const sections = [
   ["withdrawals", "Rút tiền"],
   ["policies", "Chính sách"],
   ["users", "Người dùng"],
-  ["content", "Nội dung & ưu đãi"],
+  ["content", "Nội dung"],
   ["support", "Hỗ trợ"],
   ["audit", "Nhật ký"],
 ];
@@ -876,148 +876,29 @@ function Users({ data }) {
   );
 }
 function Content({ data }) {
-  const { mutate, setToast } = useApp();
-  const [editing, setEditing] = useState(null);
+  const { mutate } = useApp();
   return (
-    <>
-      <div className="two-column">
-        <section className="panel">
-          <h2>Banner & hướng dẫn</h2>
-          <Form onSubmit={(v) => mutate("/admin/content", v, "PUT")}>
-            <Field
-              label="Nội dung banner"
-              name="banner"
-              defaultValue={data.content.banner}
-              required
-              maxLength={160}
-            />
-            <Field label="Hướng dẫn">
-              <textarea
-                name="guide"
-                rows={5}
-                defaultValue={data.content.guide}
-                required
-                maxLength={1500}
-              />
-            </Field>
-          </Form>
-        </section>
-        <section className="panel">
-          <h2>Deal & voucher</h2>
-          <p className="muted">
-            Chỉ đăng ưu đãi minh họa trong phiên bản demo. Không tự tạo mức hoàn
-            tiền cho sản phẩm.
-          </p>
-          <button className="button primary" onClick={() => setEditing({})}>
-            Thêm ưu đãi mới <Icon name="gift" size={16} />
-          </button>
-          {data.deals.map((d) => (
-            <div className="attention-row" key={d.id}>
-              <span>
-                {d.title}
-                <small>
-                  {d.active ? "Đang bật" : "Đã ẩn"} · {date(d.expires_at)}
-                </small>
-              </span>
-              <button className="button compact" onClick={() => setEditing(d)}>
-                Sửa
-              </button>
-            </div>
-          ))}
-        </section>
-      </div>
-      {editing && (
-        <Modal
-          title={editing.id ? "Chỉnh sửa ưu đãi" : "Thêm ưu đãi mô phỏng"}
-          onClose={() => setEditing(null)}
-        >
-          <Form
-            onSubmit={async (v) => {
-              await mutate("/admin/deals", {
-                ...v,
-                id: editing.id,
-                expiresAt: new Date(v.expiresAt).toISOString(),
-                active: v.active === "true",
-              });
-              setEditing(null);
-              setToast("Đã lưu ưu đãi.");
-            }}
-          >
-            <Field
-              label="Tiêu đề"
-              name="title"
-              defaultValue={editing.title}
-              required
-            />
-            <Field
-              label="Danh mục"
-              name="category"
-              defaultValue={editing.category || "Nhà cửa"}
-              required
-            />
-            <Field label="Mô tả">
-              <textarea
-                name="description"
-                defaultValue={editing.description}
-                required
-                rows={3}
-              />
-            </Field>
-            <Field
-              label="Mã voucher minh họa"
-              name="code"
-              defaultValue={editing.code}
-            />
-            <Field
-              label="Link sản phẩm Shopee"
-              name="url"
-              type="url"
-              defaultValue={editing.url || "https://shopee.vn/demo-i.123.456"}
-              required
-            />
-            <Field
-              label="Hết hạn"
-              name="expiresAt"
-              type="datetime-local"
-              defaultValue={localTime(
-                editing.expires_at ||
-                  new Date(Date.now() + 86400000).toISOString(),
-              )}
-              required
-            />
-            <Field label="Điều kiện">
-              <textarea
-                name="conditions"
-                defaultValue={
-                  editing.conditions ||
-                  "Ưu đãi minh họa. Không áp dụng thực tế."
-                }
-                required
-                rows={3}
-              />
-            </Field>
-            <div className="form-grid">
-              <Field label="Màu minh họa">
-                <select name="accent" defaultValue={editing.accent || "mint"}>
-                  {["mint", "peach", "lavender", "blue"].map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Hiển thị">
-                <select
-                  name="active"
-                  defaultValue={editing.active === 0 ? "false" : "true"}
-                >
-                  <option value="true">Bật</option>
-                  <option value="false">Ẩn</option>
-                </select>
-              </Field>
-            </div>
-          </Form>
-        </Modal>
-      )}
-    </>
+    <section className="panel">
+      <h2>Banner & hướng dẫn</h2>
+      <Form onSubmit={(v) => mutate("/admin/content", v, "PUT")}>
+        <Field
+          label="Nội dung banner"
+          name="banner"
+          defaultValue={data.content.banner}
+          required
+          maxLength={160}
+        />
+        <Field label="Hướng dẫn">
+          <textarea
+            name="guide"
+            rows={5}
+            defaultValue={data.content.guide}
+            required
+            maxLength={1500}
+          />
+        </Field>
+      </Form>
+    </section>
   );
 }
 function Support({ data }) {

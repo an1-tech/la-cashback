@@ -23,7 +23,7 @@ const data = await bootstrap.json();
 assert.equal(data.publicDemo, true);
 assert.equal(data.user, null);
 assert.ok(data.policy?.id, "Migration và seed phải tạo được chính sách");
-assert.ok(data.deals.length > 0);
+assert.equal("deals" in data, false);
 const landing = await fetch(base + "/");
 assert.equal(landing.status, 200);
 const html = await landing.text();

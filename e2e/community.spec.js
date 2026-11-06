@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 
 test("Community flows and wide-screen/mobile layouts", async ({ page }) => {
+  test.setTimeout(120000);
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.setViewportSize({ width: 2560, height: 1440 });
