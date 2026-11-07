@@ -272,3 +272,25 @@
     font-size: 16px;
   }
 }
+@media (max-height: 520px) {
+  .assistant-panel,
+  .la-assistant[data-app="true"] .assistant-panel {
+    position: fixed;
+    top: 8px;
+    right: 16px;
+    bottom: 8px;
+    height: auto;
+  }
+  .assistant-header {
+    padding: 6px 12px;
+  }
+  .assistant-composer {
+    padding: 8px;
+  }
+  .assistant-composer > p {
+    display: none;
+  }
+  .assistant-composer textarea {
+    height: 44px;
+  }
+}

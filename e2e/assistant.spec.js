@@ -160,4 +160,12 @@ test("Lá AI: desktop/mobile, light/dark, no overlap with bottom nav or overflow
         .click();
     }
   }
+  await page.setViewportSize({ width: 390, height: 380 });
+  await page.getByRole("button", { name: "Mở trợ lý Lá AI" }).click();
+  const compact = page.getByRole("dialog", { name: "Trò chuyện với Lá AI" });
+  await expect(compact.getByLabel("Câu hỏi cho Lá AI")).toBeEnabled();
+  const send = await compact
+    .getByRole("button", { name: "Gửi câu hỏi" })
+    .boundingBox();
+  expect(send.y + send.height).toBeLessThanOrEqual(380);
 });
