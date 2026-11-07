@@ -2,6 +2,7 @@ import React, { lazy, Suspense, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Icon, Loading } from "./components";
 import "./styles.css";
+import { Assistant } from "./Assistant";
 document.documentElement.dataset.theme =
   localStorage.getItem("la-theme") || "dark";
 const App = lazy(() => import("./App"));
@@ -46,15 +47,18 @@ function Site() {
   }, []);
   if (!knownPaths.includes(location.pathname)) return <NotFound />;
   return (
-    <Suspense
-      fallback={
-        <div className="startup-error">
-          <Loading />
-        </div>
-      }
-    >
-      {showLanding ? <Landing /> : <App />}
-    </Suspense>
+    <>
+      <Suspense
+        fallback={
+          <div className="startup-error">
+            <Loading />
+          </div>
+        }
+      >
+        {showLanding ? <Landing /> : <App />}
+      </Suspense>
+      <Assistant appPage={!showLanding} />
+    </>
   );
 }
 

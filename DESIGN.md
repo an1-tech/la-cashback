@@ -27,3 +27,7 @@ AddLiveTag is a third-party, noncommercial educational data source. Reuse the ap
 Blog and Deal hời are removed without replacements, including sidebar, mobile navigation, landing navigation/search/footer and deal administration. Old blog/deals hash links return home. Keep Bảng tin and the product reference panel in the link composer. Mobile navigation has four destinations: home, orders, wallet, profile.
 
 The demo checkout now shows the product captured from the user's lookup: actual name, shop, image and reference price, with a compact demo order summary. Persist each reference snapshot by click so reloading or revisiting history preserves the product. Use that server snapshot for the simulated order, clearly label all order/commission/cashback amounts as demo, and keep original completed events immutable. Retain forest/lime tokens and accessible loading/error/empty states; no animation library is needed.
+
+## November 7 assistant
+
+Lá AI is a compact bottom-right chat using the existing forest/lime tokens and leaf mark. Desktop panel 380px, phone width fits 16px gutters and clears bottom navigation. Closed by default, no automatic popups or animation dependency. Keep keyboard focus visible, Escape closes and restores focus, moving focus to page content closes the nonmodal panel. Show honest configuration/auth/loading/error states, suggested questions, plain-text responses and a short Gemini disclosure. Chat is guidance only, with no financial actions or invented account data. No React Bits effect is needed.

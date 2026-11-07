@@ -37,6 +37,7 @@ import { demoProvider } from "./providers/demo.js";
 import { createAddLiveTag } from "./providers/addlivetag.js";
 import { catalogRoutes } from "./catalog.js";
 import { saveClickProduct, demoCheckout } from "./demo-products.js";
+import { createAssistant } from "./assistant.js";
 import { createSandboxAccount } from "./seed.js";
 import { createRemoteSandbox } from "./sandbox.js";
 import { communityRoutes } from "./community.js";
@@ -107,6 +108,7 @@ export function createApp(
     publicDemo = false,
     staticDir = resolve("dist"),
     catalog = createAddLiveTag(),
+    assistant = createAssistant(),
   } = {},
 ) {
   return createServer(async (req, res) => {
@@ -356,6 +358,27 @@ export function createApp(
                 .get(user.id).n
             : 0,
         });
+        return;
+      }
+      if (method === "GET" && path === "/api/assistant/status") {
+        send({
+          configured: assistant.configured,
+          authenticated: !!user,
+          csrf: user?.csrf || null,
+        });
+        return;
+      }
+      if (method === "POST" && path === "/api/assistant/chat") {
+        needUser();
+        ensure(
+          assistant.configured,
+          "Lá AI chưa được kết nối Gemini. Vui lòng thử lại sau.",
+          503,
+        );
+        rateLimit(db, `assistant:minute:${user.id}`, 8, 60);
+        rateLimit(db, `assistant:day:${user.id}`, 50, 86400);
+        rateLimit(db, "assistant:global:day", 200, 86400);
+        send(await assistant.chat(body.messages, currentPolicy(db)));
         return;
       }
       if (

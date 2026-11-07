@@ -1289,7 +1289,7 @@
     padding: 14px 6px;
   }
   .app-shell .quick-actions button {
-    font-size: 10px;
+    font-size: 11px;
   }
   .app-shell .quick-actions button > svg:first-child {
     width: 44px;
@@ -1516,7 +1516,7 @@
     padding: 12px 16px;
   }
   .slide-0 .promo-content > small {
-    font-size: 8px;
+    font-size: 11px;
     letter-spacing: 1px;
   }
   .slide-0 .promo-content h2 {
@@ -1527,7 +1527,7 @@
     gap: 6px;
   }
   .slide-0 .promo-steps strong {
-    font-size: 10px;
+    font-size: 11px;
   }
   .slide-0 .carousel-controls {
     bottom: 1px;

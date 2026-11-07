@@ -1,6 +1,14 @@
 let csrf = "";
 export function setCsrf(value) {
-  csrf = value || "";
+  const next = value || "";
+  if (next !== csrf) {
+    csrf = next;
+    window.dispatchEvent(
+      new CustomEvent("la:session-changed", {
+        detail: { authenticated: !!csrf },
+      }),
+    );
+  }
 }
 export async function api(path, { method = "GET", body, signal } = {}) {
   const response = await fetch("/api" + path, {
