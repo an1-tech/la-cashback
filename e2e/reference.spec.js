@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("Blog đã gỡ, hỏi đáp theo danh mục và liên hệ lưu vào hỗ trợ", async ({
+test("Blog đã gỡ, hỏi đáp theo danh mục và góp ý lưu vào hỗ trợ", async ({
   page,
 }) => {
   await page.goto("/app#blog");
@@ -25,6 +25,15 @@ test("Blog đã gỡ, hỏi đáp theo danh mục và liên hệ lưu vào hỗ 
   await page.keyboard.press("Enter");
   await expect(page.locator("details[open]")).toContainText("Đăng xuất nằm");
   await page.goto("/app#contact");
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Phản hồi và góp ý" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Liên hệ", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByText("Mã nguồn đề án", { exact: true })).toHaveCount(
+    0,
+  );
   await page
     .getByRole("banner")
     .getByRole("button", { name: "Đăng nhập", exact: true })

@@ -37,7 +37,6 @@ export const primaryNavigation = [
 export const secondaryNavigation = [
   ["help", "Hỏi đáp & Hỗ trợ", "help"],
   ["settings", "Cài đặt", "grid"],
-  ["contact", "Liên hệ", "external"],
   ["legal", "Pháp lý", "shield"],
   ["feedback", "Phản hồi và góp ý", "feed"],
 ];
@@ -504,12 +503,12 @@ export function FAQ() {
   );
 }
 
-export function Contact({ feedback = false }) {
+export function Feedback() {
   const { boot, mutate, setModal, navigate } = useApp();
   return (
     <div className="contact-page">
       <div className="contact-intro">
-        <h2>{feedback ? "Phản hồi và góp ý" : "Liên hệ với chúng tôi"}</h2>
+        <h2>Phản hồi và góp ý</h2>
         <p>
           Có thắc mắc hoặc cần hỗ trợ? Gửi thông tin để Lá kiểm tra và phản hồi
         </p>
@@ -518,7 +517,6 @@ export function Contact({ feedback = false }) {
         <section className="panel">
           <h3>Gửi ý kiến cho Lá</h3>
           <Form
-            key={feedback ? "feedback" : "contact"}
             submitLabel="Gửi ý kiến"
             onSubmit={async (v, form) => {
               if (!boot.user) {
@@ -536,7 +534,7 @@ export function Contact({ feedback = false }) {
             }}
           >
             <Field label="Chủ đề">
-              <select name="topic" defaultValue={feedback ? "Góp ý" : "Hỗ trợ"}>
+              <select name="topic" defaultValue="Góp ý">
                 {["Hỗ trợ", "Báo lỗi", "Góp ý", "Báo thiếu đơn"].map((t) => (
                   <option key={t}>{t}</option>
                 ))}
@@ -588,7 +586,7 @@ export function Contact({ feedback = false }) {
           </Form>
         </section>
         <aside>
-          <h3>Thông tin liên hệ</h3>
+          <h3>Hỗ trợ và theo dõi phản hồi</h3>
           <div className="contact-channel">
             <Icon name="help" />
             <div>
@@ -612,21 +610,6 @@ export function Contact({ feedback = false }) {
               >
                 Xem yêu cầu đã gửi <Icon name="arrow" size={15} />
               </button>
-            </div>
-          </div>
-          <div className="contact-channel">
-            <Icon name="external" />
-            <div>
-              <strong>Mã nguồn đề án</strong>
-              <p>
-                <a
-                  href="https://github.com/an1-tech/la-cashback"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  an1-tech / la-cashback
-                </a>
-              </p>
             </div>
           </div>
           <section className="project-information">
@@ -666,7 +649,7 @@ export function Legal() {
         ],
         [
           "Cơ chế hỗ trợ",
-          "Gửi yêu cầu từ mục Hỗ trợ hoặc Liên hệ. Quản trị viên kiểm tra và phản hồi trong hệ thống. Kết quả xử lý được lưu cùng yêu cầu để đối chiếu.",
+          "Gửi yêu cầu từ mục Hỏi đáp & Hỗ trợ hoặc Phản hồi và góp ý. Quản trị viên kiểm tra và phản hồi trong hệ thống. Kết quả xử lý được lưu cùng yêu cầu để đối chiếu.",
         ],
         [
           "Quy chế hoạt động",
@@ -689,7 +672,6 @@ export function PageFooter() {
       <nav aria-label="Liên kết cuối trang">
         {[
           ["help", "Hỏi đáp & Hỗ trợ"],
-          ["contact", "Liên hệ"],
           ["feedback", "Phản hồi và góp ý"],
           ["legal", "Pháp lý"],
           ["legal", "Quy chế hoạt động"],

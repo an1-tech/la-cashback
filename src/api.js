@@ -32,7 +32,6 @@ export async function api(path, { method = "GET", body, signal } = {}) {
 }
 export const pageTitles = {
   home: "Trang chủ",
-  contact: "Liên hệ",
   feedback: "Phản hồi và góp ý",
   legal: "Pháp lý",
   orders: "Đơn hàng của bạn",
@@ -57,6 +56,7 @@ export function currentPage() {
   if (location.pathname === "/demo-shop") return "demo";
   const page = location.hash.slice(1).split(/[?/]/)[0] || "home";
   if (page === "faq") return "help";
+  if (page === "contact") return "feedback";
   return ["blog", "deals"].includes(page) ? "home" : page;
 }
 const allowedHosts = [

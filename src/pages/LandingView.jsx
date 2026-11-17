@@ -67,7 +67,7 @@ export default function LandingView({
               ["/app#links", "Tạo link hoàn tiền"],
               ["/app#feed", "Bảng tin"],
               ["/app#help", "Hỏi đáp & Hỗ trợ"],
-              ["/app#contact", "Liên hệ"],
+              ["/app#feedback", "Phản hồi và góp ý"],
             ].map(([href, title]) => (
               <a href={href} key={title}>
                 {title}
@@ -302,7 +302,6 @@ export default function LandingView({
               <h3>Liên kết</h3>
               {[
                 ["help", "Hỏi đáp & Hỗ trợ"],
-                ["contact", "Liên hệ"],
                 ["feedback", "Phản hồi và góp ý"],
               ].map(([key, title]) => (
                 <a href={"/app#" + key} key={key}>
@@ -325,12 +324,12 @@ export default function LandingView({
               ))}
             </section>
             <section>
-              <h3>Liên hệ</h3>
+              <h3>Hỗ trợ</h3>
               <a href="/app#help">
                 <Icon name="help" size={17} />
                 Trung tâm hỗ trợ Lá
               </a>
-              <a href="/app#contact">
+              <a href="/app#feedback">
                 <Icon name="feed" size={17} />
                 Gửi ý kiến và báo lỗi
               </a>

@@ -46,7 +46,7 @@ import {
   PromoCarousel,
   ProfileHub,
   FAQ,
-  Contact,
+  Feedback,
   Legal,
   PageFooter,
 } from "./pages/Reference";
@@ -359,7 +359,7 @@ export default function App() {
           <main
             className={
               "main-content " +
-              (["admin", "help", "contact", "feedback"].includes(page)
+              (["admin", "help", "feedback"].includes(page)
                 ? "wide-content"
                 : "narrow-content")
             }
@@ -378,8 +378,8 @@ export default function App() {
               <Leaderboard />
             ) : page === "help" ? (
               <FAQ />
-            ) : ["contact", "feedback"].includes(page) ? (
-              <Contact feedback={page === "feedback"} />
+            ) : page === "feedback" ? (
+              <Feedback />
             ) : page === "legal" ? (
               <Legal />
             ) : page === "links" ? (
