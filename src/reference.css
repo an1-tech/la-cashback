@@ -117,12 +117,10 @@
   max-width: 1140px;
 }
 .app-shell.route-help .main-content,
-.app-shell.route-contact .main-content,
 .app-shell.route-feedback .main-content {
   max-width: 1000px;
 }
 .route-blog .page-heading,
-.route-contact .page-heading,
 .route-feedback .page-heading,
 .route-profile .page-heading,
 .route-help .page-heading {

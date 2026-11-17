@@ -51,7 +51,7 @@ try {
         "app#links",
         "app#profile",
         "app#help",
-        "app#contact",
+        "app#feedback",
         "app#wallet",
         "app#settings",
       ]) {
