@@ -359,7 +359,7 @@ export default function App() {
           <main
             className={
               "main-content " +
-              (["admin", "faq", "help", "contact", "feedback"].includes(page)
+              (["admin", "help", "contact", "feedback"].includes(page)
                 ? "wide-content"
                 : "narrow-content")
             }
@@ -376,8 +376,8 @@ export default function App() {
               <Feed />
             ) : page === "ranking" ? (
               <Leaderboard />
-            ) : ["help", "faq"].includes(page) ? (
-              <FAQ support={page === "help"} />
+            ) : page === "help" ? (
+              <FAQ />
             ) : ["contact", "feedback"].includes(page) ? (
               <Contact feedback={page === "feedback"} />
             ) : page === "legal" ? (

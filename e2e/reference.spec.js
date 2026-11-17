@@ -11,6 +11,12 @@ test("Blog đã gỡ, hỏi đáp theo danh mục và liên hệ lưu vào hỗ 
     page.getByRole("button", { name: "Blog", exact: true }),
   ).toHaveCount(0);
   await page.goto("/app#faq");
+  await expect(
+    page.getByRole("button", { name: "Hỏi đáp", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Gửi yêu cầu hỗ trợ", exact: true }),
+  ).toBeVisible();
   await page
     .getByRole("navigation", { name: "Danh mục hỏi đáp" })
     .getByRole("button", { name: /^Tài khoản/ })
@@ -60,10 +66,12 @@ test("Menu điện thoại, banner và chuyển thẳng từ hồ sơ đến b�
   await expect(drawer.getByRole("link")).toBeFocused();
   await page
     .getByRole("navigation", { name: "Khám phá Lá" })
-    .getByRole("button", { name: "Hỏi đáp", exact: true })
+    .getByRole("button", { name: "Hỏi đáp & Hỗ trợ", exact: true })
     .click();
   await expect(menu).toHaveAttribute("aria-expanded", "false");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hỏi đáp");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Hỏi đáp & Hỗ trợ",
+  );
   await menu.click();
   await page.keyboard.press("Escape");
   await expect(menu).toHaveAttribute("aria-expanded", "false");

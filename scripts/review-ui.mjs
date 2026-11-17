@@ -50,7 +50,7 @@ try {
         "app#feed",
         "app#links",
         "app#profile",
-        "app#faq",
+        "app#help",
         "app#contact",
         "app#wallet",
         "app#settings",
