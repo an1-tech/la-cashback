@@ -66,7 +66,7 @@ export default function LandingView({
               ["/", "Trang chủ"],
               ["/app#links", "Tạo link hoàn tiền"],
               ["/app#feed", "Bảng tin"],
-              ["/app#faq", "Hỏi đáp"],
+              ["/app#help", "Hỏi đáp & Hỗ trợ"],
               ["/app#contact", "Liên hệ"],
             ].map(([href, title]) => (
               <a href={href} key={title}>
@@ -279,7 +279,7 @@ export default function LandingView({
                 <p>{text}</p>
               </details>
             ))}
-            <a className="landing-text-link" href="/app#faq">
+            <a className="landing-text-link" href="/app#help">
               Xem tất cả câu hỏi <Icon name="arrow" size={17} />
             </a>
           </div>
@@ -301,7 +301,7 @@ export default function LandingView({
             <section>
               <h3>Liên kết</h3>
               {[
-                ["faq", "Hỏi đáp"],
+                ["help", "Hỏi đáp & Hỗ trợ"],
                 ["contact", "Liên hệ"],
                 ["feedback", "Phản hồi và góp ý"],
               ].map(([key, title]) => (

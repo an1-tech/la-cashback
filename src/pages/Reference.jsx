@@ -37,7 +37,6 @@ export const primaryNavigation = [
 export const secondaryNavigation = [
   ["help", "Hỏi đáp & Hỗ trợ", "help"],
   ["settings", "Cài đặt", "grid"],
-  ["faq", "Hỏi đáp", "help"],
   ["contact", "Liên hệ", "external"],
   ["legal", "Pháp lý", "shield"],
   ["feedback", "Phản hồi và góp ý", "feed"],
@@ -430,8 +429,8 @@ const faqGroups = [
     ],
   ],
 ];
-export function FAQ({ support = false }) {
-  const [group, setGroup] = useState(support ? 3 : 0),
+export function FAQ() {
+  const [group, setGroup] = useState(3),
     [query, setQuery] = useState("");
   const { navigate, setModal } = useApp();
   const rows = query
@@ -471,22 +470,17 @@ export function FAQ({ support = false }) {
             </button>
           ))}
         </nav>
-        {support && (
-          <div className="support-shortcuts">
-            <button
-              className="button primary"
-              onClick={() => setModal("support")}
-            >
-              Gửi yêu cầu hỗ trợ
-            </button>
-            <button
-              className="text-button"
-              onClick={() => navigate("settings")}
-            >
-              Xem yêu cầu đã gửi <Icon name="arrow" size={15} />
-            </button>
-          </div>
-        )}
+        <div className="support-shortcuts">
+          <button
+            className="button primary"
+            onClick={() => setModal("support")}
+          >
+            Gửi yêu cầu hỗ trợ
+          </button>
+          <button className="text-button" onClick={() => navigate("settings")}>
+            Xem yêu cầu đã gửi <Icon name="arrow" size={15} />
+          </button>
+        </div>
       </aside>
       <section>
         <div className="section-heading">
@@ -694,7 +688,7 @@ export function PageFooter() {
     <footer className="main-footer reference-footer">
       <nav aria-label="Liên kết cuối trang">
         {[
-          ["faq", "Hỏi đáp"],
+          ["help", "Hỏi đáp & Hỗ trợ"],
           ["contact", "Liên hệ"],
           ["feedback", "Phản hồi và góp ý"],
           ["legal", "Pháp lý"],

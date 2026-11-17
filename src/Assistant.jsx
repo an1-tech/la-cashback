@@ -223,8 +223,8 @@ export function Assistant({ appPage }) {
             {access && !access.configured && (
               <p className="assistant-note">
                 Lá AI chưa sẵn sàng. Bạn có thể xem{" "}
-                <a href="/app#faq" onClick={close}>
-                  Hỏi đáp
+                <a href="/app#help" onClick={close}>
+                  Hỏi đáp & Hỗ trợ
                 </a>{" "}
                 trong lúc chờ kết nối.
               </p>
