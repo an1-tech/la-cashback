@@ -266,6 +266,7 @@
 .landing-benefit-strip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
   gap: 12px;
   margin-top: 60px;
 }
@@ -275,9 +276,6 @@
   border-radius: 28px;
   padding: 24px;
   box-shadow: 0 20px 28px #0001;
-}
-.landing-benefit-strip article:nth-child(even) {
-  transform: translateY(28px);
 }
 .benefit-number {
   color: var(--landing-accent);
@@ -331,6 +329,7 @@
   list-style: none;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
   gap: 24px;
   padding: 0;
   margin: 0;
@@ -344,12 +343,6 @@
   padding: 28px;
   box-shadow: 0 22px 30px #0001;
   overflow: hidden;
-}
-.landing-how li:nth-child(2) {
-  transform: translateY(40px);
-}
-.landing-how li:nth-child(3) {
-  transform: translateY(12px);
 }
 .step-watermark {
   position: absolute;
@@ -672,9 +665,6 @@
     gap: 16px;
     margin-top: 65px;
   }
-  .landing-benefit-strip article:nth-child(even) {
-    transform: none;
-  }
   .landing h2 {
     font-size: 42px;
   }
@@ -838,8 +828,7 @@
   .landing-how ol {
     grid-template-columns: 1fr;
   }
-  .landing-how li:nth-child(n) {
-    transform: none;
+  .landing-how li {
     min-height: 235px;
     padding: 24px;
   }
